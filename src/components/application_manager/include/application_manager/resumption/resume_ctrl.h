@@ -59,6 +59,16 @@ class ResumeCtrl {
   virtual ~ResumeCtrl() {}
 
   /**
+   * @brief ResumptionCallBack Function signature to be called when
+   * data resumption will be finished
+   * @param result_code result code for sending to mobile
+   * @param info additional info for sending to mobile
+   */
+  typedef std::function<void(mobile_apis::Result::eType result_code,
+                             const std::string& info)>
+      ResumptionCallBack;
+
+  /**
    * @brief Save all applications info to the file system
    */
   virtual void SaveAllApplications() = 0;
@@ -175,10 +185,14 @@ class ResumeCtrl {
    * @brief Start timer for resumption applications
    *        Restore D1-D5 data
    * @param application that is need to be restored
+   * @param hash stored hash value for this app
+   * @param callback Function signature to be called when
+   * data resumption will be finished
    * @return true if it was saved, otherwise return false
    */
   virtual bool StartResumption(app_mngr::ApplicationSharedPtr application,
-                               const std::string& hash) = 0;
+                               const std::string& hash,
+                               ResumptionCallBack callback) = 0;
   /**
    * @brief Start timer for resumption applications
    *        Does not restore D1-D5 data
@@ -196,6 +210,15 @@ class ResumeCtrl {
   virtual void RetryResumption(const uint32_t app_id) = 0;
 
   /**
+   * @brief Handle restored data when timeout appeared
+   * @param correlation_id - const int32_t
+   * @param function id hmi_apis::FunctionID::eType
+   */
+
+  virtual void HandleOnTimeOut(const uint32_t correlation_id,
+                               const hmi_apis::FunctionID::eType) = 0;
+
+  /**
    * @brief Check if there are all files need for resumption
    * @param application that is need to be restored
    * @return true if it all files exist, otherwise return false
@@ -206,6 +229,7 @@ class ResumeCtrl {
   /**
    * @brief Check application hash
    * @param application that is need to be restored
+   * @param hash stored hash value to be checked for restoring application
    * @return true if it was saved, otherwise return false
    */
   virtual bool CheckApplicationHash(app_mngr::ApplicationSharedPtr application,
