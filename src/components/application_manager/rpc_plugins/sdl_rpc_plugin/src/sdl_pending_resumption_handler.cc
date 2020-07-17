@@ -55,13 +55,7 @@ SDLPendingResumptionHandler::CreateSubscriptionRequest() {
 void SDLPendingResumptionHandler::OnResumptionRevert() {
   LOG4CXX_AUTO_TRACE(logger_);
   using namespace application_manager;
-  const hmi_apis::FunctionID::eType timed_out_pending_request_fid =
-      static_cast<hmi_apis::FunctionID::eType>(
-          pending_requests_.begin()
-              ->second[strings::params][strings::function_id]
-              .asInt());
-  unsubscribe_from_event(timed_out_pending_request_fid);
-  pending_requests_.clear();
+  ClearPendingRequestsMap();
 
   if (!pending_requests_.empty()) {
     LOG4CXX_DEBUG(logger_, "Still waiting for some response");
