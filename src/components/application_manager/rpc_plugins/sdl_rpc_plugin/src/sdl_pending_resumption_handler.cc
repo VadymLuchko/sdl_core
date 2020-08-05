@@ -26,6 +26,7 @@
  */
 
 #include "sdl_rpc_plugin/sdl_pending_resumption_handler.h"
+#include "application_manager/event_engine/event.h"
 #include "application_manager/event_engine/event_observer.h"
 #include "application_manager/message_helper.h"
 #include "application_manager/resumption/resumption_data_processor.h"
@@ -33,7 +34,7 @@
 
 namespace sdl_rpc_plugin {
 
-CREATE_LOGGERPTR_GLOBAL(logger_, "VehicleInfoPendingResumptionHandler")
+CREATE_LOGGERPTR_GLOBAL(logger_, "SdlRPCPlugin")
 
 SDLPendingResumptionHandler::SDLPendingResumptionHandler(
     application_manager::ApplicationManager& application_manager)
@@ -63,9 +64,8 @@ void SDLPendingResumptionHandler::OnResumptionRevert() {
   }
 
   if (!freezed_resumptions_.empty()) {
-    ResumptionAwaitingHandling freezed_resumption =
-        freezed_resumptions_.front();
-    freezed_resumptions_.pop();
+    ResumptionAwaitingHandling freezed_resumption = freezed_resumptions_.back();
+    freezed_resumptions_.pop_back();
 
     auto request = std::make_shared<smart_objects::SmartObject>(
         freezed_resumption.request_to_send_.message);
@@ -116,6 +116,25 @@ void SDLPendingResumptionHandler::on_event(
   }
   pending_request = pending_requests_[corr_id];
   pending_requests_.erase(corr_id);
+  if (app_ids_.empty()) {
+    LOG4CXX_ERROR(logger_, "app_ids is empty");
+    return;
+  }
+  uint32_t app_id = app_ids_.front();
+  LOG4CXX_DEBUG(logger_, "AKutsan pop" << app_id);
+  app_ids_.pop();
+  auto app = application_manager_.application(app_id);
+  if (!app) {
+    LOG4CXX_ERROR(logger_, "Application NOT found");
+    return;
+  }
+
+  LOG4CXX_DEBUG(
+      logger_,
+      "AKutsan HMI respond to WP "
+          << event.id() << " "
+          << event.smart_object()[strings::params][strings::correlation_id]
+                 .asInt());
 
   LOG4CXX_DEBUG(logger_,
                 "Received event with function id: "
@@ -123,33 +142,37 @@ void SDLPendingResumptionHandler::on_event(
 
   if (resumption::IsResponseSuccessful(response)) {
     LOG4CXX_DEBUG(logger_, "Resumption of subscriptions is successful");
+    LOG4CXX_DEBUG(
+        logger_, "AKutsan Successfully subscribed app to WP " << app->app_id());
+    application_manager_.SubscribeAppForWayPoints(app);
+
+    unsubscribe_from_event(event.id());
+    LOG4CXX_DEBUG(logger_, "AKutsan unsubscribe from event " << event.id());
+    for (auto& freezed_resumption : freezed_resumptions_) {
+      auto corr_id = freezed_resumption.request_to_send_
+                         .message[strings::params][strings::correlation_id]
+                         .asInt();
+      LOG4CXX_DEBUG(logger_, "AKutsan  raize fake freezed responses");
+      RaiseFakeSuccfullResponse(response, corr_id);
+      application_manager_.SubscribeAppForWayPoints(freezed_resumption.app_id);
+    }
+    freezed_resumptions_.clear();
   } else {
     LOG4CXX_DEBUG(logger_, "Resumption of subscriptions is NOT successful");
-    uint32_t app_id = 0;
-    if (app_ids_.empty()) {
-      LOG4CXX_ERROR(logger_, "app_ids is empty");
-      return;
-    }
-    app_id = app_ids_.front();
-    auto app = application_manager_.application(app_id);
-    if (!app) {
-      LOG4CXX_ERROR(logger_, "Application NOT found");
-      return;
-    }
-    application_manager_.UnsubscribeAppFromWayPoints(app);
+
     if (freezed_resumptions_.empty()) {
       LOG4CXX_DEBUG(logger_, "freezed resumptions is empty");
       return;
     }
 
-    ResumptionAwaitingHandling freezed_resumption =
-        freezed_resumptions_.front();
-    freezed_resumptions_.pop();
+    ResumptionAwaitingHandling freezed_resumption = freezed_resumptions_.back();
+    freezed_resumptions_.pop_back();
 
     //    auto request = CreateSubscriptionRequest();
     auto resumption_req = freezed_resumption.request_to_send_;
     const uint32_t cid =
-        resumption_req.message[strings::params][strings::function_id].asInt();
+        resumption_req.message[strings::params][strings::correlation_id]
+            .asInt();
     const hmi_apis::FunctionID::eType fid =
         static_cast<hmi_apis::FunctionID::eType>(
             resumption_req.message[strings::params][strings::function_id]
@@ -187,6 +210,8 @@ void SDLPendingResumptionHandler::HandleResumptionSubscriptionRequest(
   auto resumption_request =
       MakeResumptionRequest(corr_id, function_id, *request);
   app_ids_.push(app.app_id());
+  LOG4CXX_DEBUG(logger_, "AKutsan push" << app.app_id());
+  LOG4CXX_DEBUG(logger_, "AKutsan subscribe subscriber for response WP ");
   subscriber(app.app_id(), resumption_request);
   if (pending_requests_.empty()) {
     LOG4CXX_DEBUG(logger_,
@@ -196,6 +221,7 @@ void SDLPendingResumptionHandler::HandleResumptionSubscriptionRequest(
     LOG4CXX_DEBUG(logger_,
                   "Sending request with function id: "
                       << function_id << " and correlation_id: " << corr_id);
+    LOG4CXX_DEBUG(logger_, "AKutsan will send request WP to HMI ");
     application_manager_.GetRPCService().ManageHMICommand(request);
     return;
   }
