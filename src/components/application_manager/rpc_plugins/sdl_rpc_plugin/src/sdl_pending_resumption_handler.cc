@@ -143,7 +143,7 @@ void SDLPendingResumptionHandler::on_event(
       auto corr_id = freezed_resumption.request_to_send_
                          .message[strings::params][strings::correlation_id]
                          .asInt();
-      RaiseFakeSuccfullResponse(response, corr_id);
+      RaiseFakeSuccessfulResponse(response, corr_id);
       application_manager_.SubscribeAppForWayPoints(freezed_resumption.app_id);
     }
     freezed_resumptions_.clear();
