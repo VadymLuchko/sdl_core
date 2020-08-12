@@ -56,7 +56,6 @@ SDLPendingResumptionHandler::CreateSubscriptionRequest() {
 void SDLPendingResumptionHandler::OnResumptionRevert() {
   LOG4CXX_AUTO_TRACE(logger_);
   using namespace application_manager;
-  ClearPendingRequestsMap();
 
   if (!pending_requests_.empty()) {
     LOG4CXX_DEBUG(logger_, "Still waiting for some response");
