@@ -36,10 +36,10 @@
 
 namespace logger {
 
+volatile bool is_logger_thread_deleting = false;
+
 LoggerImpl::LoggerImpl(bool use_message_loop_thread)
     : impl_(nullptr), use_message_loop_thread_(use_message_loop_thread) {
-  if (!use_message_loop_thread_)
-    logger::logger_status = LoggerThreadIsNotUsed;
 }
 
 void LoggerImpl::Init(std::unique_ptr<ThirdPartyLoggerInterface>&& impl) {
@@ -51,7 +51,6 @@ void LoggerImpl::Init(std::unique_ptr<ThirdPartyLoggerInterface>&& impl) {
   if (use_message_loop_thread_) {
     auto deinit_logger = [](LogMessageLoopThread* logMsgThread) {
       delete logMsgThread;
-      logger::logger_status = logger::LoggerThreadNotCreated;
     };
 
     if (!loop_thread_) {
@@ -60,14 +59,12 @@ void LoggerImpl::Init(std::unique_ptr<ThirdPartyLoggerInterface>&& impl) {
               [this](LogMessage message) { impl_->PushLog(message); }),
           deinit_logger);
     }
-    logger::logger_status = logger::LoggerThreadCreated;
   }
 }
 
 void LoggerImpl::DeInit() {
   if (use_message_loop_thread_) {
     Flush();
-    logger::logger_status = logger::LoggerThreadNotCreated;
     loop_thread_.reset();
   }
 
@@ -77,12 +74,10 @@ void LoggerImpl::DeInit() {
 }
 
 void LoggerImpl::Flush() {
-  if (use_message_loop_thread_ &&
-      (logger::LoggerThreadCreated == logger::logger_status)) {
-    logger::LoggerStatus old_status = logger::logger_status;
-    logger::logger_status = logger::DeletingLoggerThread;
+  if (IsLoopThreadActive()) {
+    is_logger_thread_deleting = true;
     loop_thread_->WaitDumpQueue();
-    logger::logger_status = old_status;
+    is_logger_thread_deleting = false;
   }
 }
 
@@ -93,13 +88,22 @@ bool LoggerImpl::IsEnabledFor(const std::string& component,
 
 void LoggerImpl::PushLog(const LogMessage& log_message) {
   if (impl_) {
-    if (use_message_loop_thread_ &&
-        (logger::LoggerThreadCreated == logger::logger_status)) {
+    if (IsLoopThreadActive()) {
       loop_thread_->Push(log_message);
     } else {
       impl_->PushLog(log_message);
     }
   }
+}
+
+bool LoggerImpl::IsLoggerThreadDeleting() const
+{
+  return is_logger_thread_deleting;
+}
+
+bool LoggerImpl::IsLoopThreadActive() const
+{
+  return use_message_loop_thread_ && loop_thread_ && (!is_logger_thread_deleting);
 }
 
 Logger& Logger::instance(Logger* pre_init) {

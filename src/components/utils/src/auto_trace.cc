@@ -37,7 +37,7 @@ namespace logger {
 
 AutoTrace::AutoTrace(const std::string& component, const LocationInfo& location)
     : component_(component), location_(location) {
-  if (logger::logger_status != logger::DeletingLoggerThread) {
+  if (!logger::Logger::instance().IsLoggerThreadDeleting()) {
     if (logger::Logger::instance().IsEnabledFor(
             component_, logger::LogLevel::TRACE_LEVEL)) {
       logger::LogMessage message{component_,
@@ -52,7 +52,7 @@ AutoTrace::AutoTrace(const std::string& component, const LocationInfo& location)
 }
 
 AutoTrace::~AutoTrace() {
-  if (logger::logger_status != logger::DeletingLoggerThread) {
+  if (!logger::Logger::instance().IsLoggerThreadDeleting()) {
     if (logger::Logger::instance().IsEnabledFor(
             component_, logger::LogLevel::TRACE_LEVEL)) {
       logger::LogMessage message{component_,

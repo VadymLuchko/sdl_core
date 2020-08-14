@@ -71,6 +71,7 @@ class Logger {
   virtual void DeInit() = 0;
   virtual void Flush() = 0;
   virtual void PushLog(const LogMessage& log_message) = 0;
+  virtual bool IsLoggerThreadDeleting() const = 0;
   static Logger& instance(Logger* pre_init = nullptr);
 };
 

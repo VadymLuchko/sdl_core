@@ -37,10 +37,11 @@
 
 #include <functional>
 
-#include "utils/logger_status.h"
 #include "utils/threads/message_loop_thread.h"
 
 namespace logger {
+
+extern volatile bool is_logger_thread_deleting;
 
 typedef std::queue<LogMessage> LogMessageQueue;
 
@@ -67,7 +68,7 @@ class LogMessageLoopThread : public LogMessageLoopThreadTemplate,
   ~LogMessageLoopThread() {
     // we'll have to drop messages
     // while deleting logger thread
-    logger::logger_status = logger::DeletingLoggerThread;
+    is_logger_thread_deleting = true;
     LogMessageLoopThreadTemplate::Shutdown();
   }
 
@@ -85,6 +86,11 @@ class LoggerImpl : public Logger, public LoggerInitializer {
   bool IsEnabledFor(const std::string& component,
                     LogLevel log_level) const override;
   void PushLog(const LogMessage& log_message) override;
+
+  bool IsLoggerThreadDeleting() const override;
+
+ private:
+   bool IsLoopThreadActive() const;
 
   std::unique_ptr<ThirdPartyLoggerInterface> impl_;
   LoopTreadPtr<LogMessageLoopThread> loop_thread_;

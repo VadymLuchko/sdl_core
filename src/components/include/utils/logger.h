@@ -40,7 +40,6 @@
 #include <string>
 
 #include "utils/auto_trace.h"
-#include "utils/logger_status.h"
 
 #define SDL_CREATE_LOG_VARIABLE(component_name) \
   namespace {                                   \
@@ -61,7 +60,7 @@
 
 #define LOG_WITH_LEVEL(logLevel, logEvent)                                 \
   do {                                                                     \
-    if (logger::logger_status != logger::DeletingLoggerThread) {           \
+    if (!logger::Logger::instance().IsLoggerThreadDeleting()) {           \
       if (logger::Logger::instance().IsEnabledFor(logger_, logLevel)) {    \
         std::stringstream accumulator;                                     \
         accumulator << logEvent;                                           \
