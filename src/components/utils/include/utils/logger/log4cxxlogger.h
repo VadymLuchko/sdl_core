@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Ford Motor Company
+ * Copyright (c) 2020, Ford Motor Company
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -30,23 +30,24 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef SRC_COMPONENTS_INCLUDE_UTILS_LOGGER_STATUS_H_
-#define SRC_COMPONENTS_INCLUDE_UTILS_LOGGER_STATUS_H_
+#pragma once
+
+#include <log4cxx/logger.h>
+#include "utils/ilogger.h"
 
 namespace logger {
 
-typedef enum {
-  LoggerThreadNotCreated,
-  CreatingLoggerThread,
-  LoggerThreadCreated,
-  DeletingLoggerThread
-} LoggerStatus;
+class Log4CXXLogger : public ThirdPartyLoggerInterface {
+ public:
+  Log4CXXLogger(const std::string& filename);
+  void Init() override;
+  void DeInit() override;
+  bool IsEnabledFor(const std::string& component,
+                    LogLevel log_level) const override;
+  void PushLog(const LogMessage& log_message) override;
 
-// this variable is only changed when creating and deleting logger thread
-// its reads and writes are believed to be atomic
-// thus it shall be considered thread safe
-extern volatile LoggerStatus logger_status;
+ private:
+  std::string filename_;
+};
 
 }  // namespace logger
-
-#endif  // SRC_COMPONENTS_INCLUDE_UTILS_LOGGER_STATUS_H_

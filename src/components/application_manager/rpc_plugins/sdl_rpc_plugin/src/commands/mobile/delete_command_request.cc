@@ -44,6 +44,8 @@ using namespace application_manager;
 
 namespace commands {
 
+SDL_CREATE_LOG_VARIABLE("Commands")
+
 DeleteCommandRequest::DeleteCommandRequest(
     const application_manager::commands::MessageSharedPtr& message,
     ApplicationManager& application_manager,
@@ -61,13 +63,13 @@ DeleteCommandRequest::DeleteCommandRequest(
 DeleteCommandRequest::~DeleteCommandRequest() {}
 
 void DeleteCommandRequest::Run() {
-  LOG4CXX_AUTO_TRACE(logger_);
+  SDL_LOG_AUTO_TRACE();
 
   ApplicationSharedPtr application =
       application_manager_.application(connection_key());
 
   if (!application) {
-    LOG4CXX_ERROR(logger_, "Application is not registered");
+    SDL_LOG_ERROR("Application is not registered");
     SendResponse(false, mobile_apis::Result::APPLICATION_NOT_REGISTERED);
     return;
   }
@@ -75,10 +77,10 @@ void DeleteCommandRequest::Run() {
   const int32_t cmd_id =
       (*message_)[strings::msg_params][strings::cmd_id].asInt();
 
-  smart_objects::SmartObject* command = application->FindCommand(cmd_id);
+  smart_objects::SmartObject command = application->FindCommand(cmd_id);
 
-  if (!command) {
-    LOG4CXX_ERROR(logger_, "Command with id " << cmd_id << " is not found.");
+  if (smart_objects::SmartType::SmartType_Null == command.getType()) {
+    SDL_LOG_ERROR("Command with id " << cmd_id << " is not found.");
     SendResponse(false, mobile_apis::Result::INVALID_ID);
     return;
   }
@@ -92,21 +94,21 @@ void DeleteCommandRequest::Run() {
 
   // we should specify amount of required responses in the 1st request
   uint32_t chaining_counter = 0;
-  if ((*command).keyExists(strings::menu_params)) {
+  if (command.keyExists(strings::menu_params)) {
     ++chaining_counter;
   }
 
-  if ((*command).keyExists(strings::vr_commands)) {
+  if (command.keyExists(strings::vr_commands)) {
     ++chaining_counter;
   }
   /* Need to set all flags before sending request to HMI
    * for correct processing this flags in method on_event */
-  if ((*command).keyExists(strings::menu_params)) {
+  if (command.keyExists(strings::menu_params)) {
     StartAwaitForInterface(HmiInterfaces::HMI_INTERFACE_UI);
     SendHMIRequest(hmi_apis::FunctionID::UI_DeleteCommand, &msg_params, true);
   }
   // check vr params
-  if ((*command).keyExists(strings::vr_commands)) {
+  if (command.keyExists(strings::vr_commands)) {
     // VR params
     msg_params[strings::grammar_id] = application->get_grammar_id();
     msg_params[strings::type] = hmi_apis::Common_VRCommandType::Command;
@@ -132,17 +134,17 @@ bool DeleteCommandRequest::PrepareResponseParameters(
       ui_delete_info, ui_info_, vr_delete_info, vr_info_);
   if (is_vr_or_ui_warning && !ui_delete_info.is_unsupported_resource &&
       !vr_delete_info.is_unsupported_resource) {
-    LOG4CXX_DEBUG(logger_, "VR or UI result is warning");
+    SDL_LOG_DEBUG("VR or UI result is warning");
     result_code = mobile_apis::Result::WARNINGS;
     return result;
   }
   result_code = PrepareResultCodeForResponse(ui_delete_info, vr_delete_info);
-  LOG4CXX_DEBUG(logger_, "Result is " << (result ? "true" : "false"));
+  SDL_LOG_DEBUG("Result is " << (result ? "true" : "false"));
   return result;
 }
 
 void DeleteCommandRequest::on_event(const event_engine::Event& event) {
-  LOG4CXX_AUTO_TRACE(logger_);
+  SDL_LOG_AUTO_TRACE();
 
   const smart_objects::SmartObject& message = event.smart_object();
   switch (event.id()) {
@@ -150,9 +152,8 @@ void DeleteCommandRequest::on_event(const event_engine::Event& event) {
       EndAwaitForInterface(HmiInterfaces::HMI_INTERFACE_UI);
       ui_result_ = static_cast<hmi_apis::Common_Result::eType>(
           message[strings::params][hmi_response::code].asInt());
-      LOG4CXX_DEBUG(logger_,
-                    "Received UI_DeleteCommand event with result "
-                        << MessageHelper::HMIResultToString(ui_result_));
+      SDL_LOG_DEBUG("Received UI_DeleteCommand event with result "
+                    << MessageHelper::HMIResultToString(ui_result_));
       GetInfo(message, ui_info_);
       break;
     }
@@ -160,20 +161,19 @@ void DeleteCommandRequest::on_event(const event_engine::Event& event) {
       EndAwaitForInterface(HmiInterfaces::HMI_INTERFACE_VR);
       vr_result_ = static_cast<hmi_apis::Common_Result::eType>(
           message[strings::params][hmi_response::code].asInt());
-      LOG4CXX_DEBUG(logger_,
-                    "Received VR_DeleteCommand event with result "
-                        << MessageHelper::HMIResultToString(vr_result_));
+      SDL_LOG_DEBUG("Received VR_DeleteCommand event with result "
+                    << MessageHelper::HMIResultToString(vr_result_));
       GetInfo(message, vr_info_);
       break;
     }
     default: {
-      LOG4CXX_ERROR(logger_, "Received unknown event" << event.id());
+      SDL_LOG_ERROR("Received unknown event" << event.id());
       return;
     }
   }
 
   if (IsPendingResponseExist()) {
-    LOG4CXX_DEBUG(logger_, "Still awaiting for other responses.");
+    SDL_LOG_DEBUG("Still awaiting for other responses.");
     return;
   }
 
@@ -181,18 +181,17 @@ void DeleteCommandRequest::on_event(const event_engine::Event& event) {
       application_manager_.application(connection_key());
 
   if (!application) {
-    LOG4CXX_ERROR(logger_, "Application is not registered");
+    SDL_LOG_ERROR("Application is not registered");
     return;
   }
   smart_objects::SmartObject& msg_params = (*message_)[strings::msg_params];
 
   const uint32_t cmd_id = msg_params[strings::cmd_id].asUInt();
 
-  smart_objects::SmartObject* command = application->FindCommand(cmd_id);
+  const auto command = application->FindCommand(cmd_id);
 
-  if (!command) {
-    LOG4CXX_ERROR(logger_,
-                  "Command id " << cmd_id
+  if (smart_objects::SmartType_Null == command.getType()) {
+    SDL_LOG_ERROR("Command id " << cmd_id
                                 << " not found for "
                                    "application with connection key "
                                 << connection_key());

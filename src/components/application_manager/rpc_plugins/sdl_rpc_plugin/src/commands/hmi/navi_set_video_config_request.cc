@@ -31,6 +31,7 @@
  */
 
 #include "sdl_rpc_plugin/commands/hmi/navi_set_video_config_request.h"
+
 #include <string>
 #include <vector>
 
@@ -38,6 +39,8 @@ namespace sdl_rpc_plugin {
 using namespace application_manager;
 
 namespace commands {
+
+SDL_CREATE_LOG_VARIABLE("Commands")
 
 NaviSetVideoConfigRequest::NaviSetVideoConfigRequest(
     const application_manager::commands::MessageSharedPtr& message,
@@ -54,19 +57,18 @@ NaviSetVideoConfigRequest::NaviSetVideoConfigRequest(
 NaviSetVideoConfigRequest::~NaviSetVideoConfigRequest() {}
 
 void NaviSetVideoConfigRequest::Run() {
-  LOG4CXX_AUTO_TRACE(logger_);
+  SDL_LOG_AUTO_TRACE();
   if (!app_mngr::commands::CheckAvailabilityHMIInterfaces(
           application_manager_, HmiInterfaces::HMI_INTERFACE_Navigation)) {
-    LOG4CXX_WARN(logger_, "HMI interface Navigation is not supported");
+    SDL_LOG_WARN("HMI interface Navigation is not supported");
     return;
   }
 
   ApplicationSharedPtr app =
       application_manager_.application_by_hmi_app(application_id());
   if (!app) {
-    LOG4CXX_ERROR(
-        logger_,
-        "Application with hmi_app_id " << application_id() << "does not exist");
+    SDL_LOG_ERROR("Application with hmi_app_id " << application_id()
+                                                 << " does not exist");
     return;
   }
 
@@ -76,13 +78,12 @@ void NaviSetVideoConfigRequest::Run() {
 }
 
 void NaviSetVideoConfigRequest::on_event(const event_engine::Event& event) {
-  LOG4CXX_AUTO_TRACE(logger_);
+  SDL_LOG_AUTO_TRACE();
 
   ApplicationSharedPtr app =
       application_manager_.application_by_hmi_app(application_id());
   if (!app) {
-    LOG4CXX_ERROR(logger_,
-                  "Application is not found, abort NaviSetVideoConfigRequest");
+    SDL_LOG_ERROR("Application is not found, abort NaviSetVideoConfigRequest");
     return;
   }
 
@@ -96,12 +97,11 @@ void NaviSetVideoConfigRequest::on_event(const event_engine::Event& event) {
       std::vector<std::string> rejected_params;
 
       if (code == hmi_apis::Common_Result::SUCCESS) {
-        LOG4CXX_DEBUG(logger_, "Received SetVideoConfig success response");
+        SDL_LOG_DEBUG("Received SetVideoConfig success response");
         result = true;
       } else {
-        LOG4CXX_DEBUG(
-            logger_,
-            "Received SetVideoConfig failure response (" << event.id() << ")");
+        SDL_LOG_DEBUG("Received SetVideoConfig failure response (" << event.id()
+                                                                   << ")");
         result = false;
         if (message[strings::msg_params].keyExists(strings::rejected_params)) {
           const smart_objects::SmartArray* list =
@@ -127,18 +127,18 @@ void NaviSetVideoConfigRequest::on_event(const event_engine::Event& event) {
       break;
     }
     default:
-      LOG4CXX_ERROR(logger_, "Received unknown event" << event.id());
+      SDL_LOG_ERROR("Received unknown event " << event.id());
       break;
   }
 }
 
 void NaviSetVideoConfigRequest::OnTimeOut() {
-  LOG4CXX_WARN(logger_, "Timed out while waiting for SetVideoConfig response");
+  SDL_LOG_WARN("Timed out while waiting for SetVideoConfig response");
 
   ApplicationSharedPtr app =
       application_manager_.application_by_hmi_app(application_id());
   if (!app) {
-    LOG4CXX_ERROR(logger_, "Application is not found");
+    SDL_LOG_ERROR("Application is not found");
     return;
   }
 

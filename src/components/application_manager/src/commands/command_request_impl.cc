@@ -26,12 +26,12 @@
  */
 
 #include "application_manager/commands/command_request_impl.h"
+
 #include "application_manager/application_impl.h"
 #include "application_manager/message_helper.h"
 #include "application_manager/rpc_service.h"
-#include "smart_objects/smart_object.h"
-
 #include "smart_objects/enum_schema_item.h"
+#include "smart_objects/smart_object.h"
 
 namespace application_manager {
 
@@ -45,6 +45,8 @@ struct AppExtensionPredicate {
 }  // namespace
 
 namespace commands {
+
+SDL_CREATE_LOG_VARIABLE("Commands")
 
 CommandRequestImpl::CommandRequestImpl(
     const MessageSharedPtr& message,
@@ -101,7 +103,7 @@ bool CommandRequestImpl::AllowedToTerminate() {
 
 bool CommandRequestImpl::CheckAllowedParameters(
     const Command::CommandSource source) {
-  LOG4CXX_AUTO_TRACE(logger_);
+  SDL_LOG_AUTO_TRACE();
 
   // RegisterAppInterface should always be allowed
   if (mobile_apis::FunctionID::RegisterAppInterfaceID ==
@@ -124,14 +126,13 @@ void CommandRequestImpl::SendMobileRequest(
   request[strings::params][strings::correlation_id] = mobile_correlation_id;
   request[strings::params][strings::message_type] = MessageType::kRequest;
   if (use_events) {
-    LOG4CXX_DEBUG(logger_,
-                  "SendMobileRequest subscribe_on_event "
-                      << function_id << " " << mobile_correlation_id);
+    SDL_LOG_DEBUG("SendMobileRequest subscribe_on_event "
+                  << function_id << " " << mobile_correlation_id);
     subscribe_on_event(function_id, mobile_correlation_id);
   }
 
   if (!rpc_service_.ManageMobileCommand(msg, SOURCE_SDL)) {
-    LOG4CXX_ERROR(logger_, "Unable to send request to mobile");
+    SDL_LOG_ERROR("Unable to send request to mobile");
   }
 }
 
@@ -155,14 +156,14 @@ void CommandRequestImpl::on_event(const event_engine::Event&) {}
 void CommandRequestImpl::on_event(const event_engine::MobileEvent&) {}
 
 void CommandRequestImpl::HandleTimeOut() {
-  LOG4CXX_AUTO_TRACE(logger_);
+  SDL_LOG_AUTO_TRACE();
   {
     sync_primitives::AutoLock auto_lock(*state_lock_);
     if (helpers::Compare<RequestState, helpers::EQ, helpers::ONE>(
             current_state(),
             RequestState::kHandlingResponse,
             RequestState::kResponded)) {
-      LOG4CXX_DEBUG(logger_, "Current request state = Responding/Responded");
+      SDL_LOG_DEBUG("Current request state = Responding/Responded");
       return;
     }
     set_current_state(RequestState::kTimedOut);
@@ -173,7 +174,7 @@ void CommandRequestImpl::HandleTimeOut() {
 
 bool CommandRequestImpl::IsMobileResultSuccess(
     const mobile_apis::Result::eType result_code) {
-  LOG4CXX_AUTO_TRACE(logger_);
+  SDL_LOG_AUTO_TRACE();
   using namespace helpers;
   return Compare<mobile_apis::Result::eType, EQ, ONE>(
       result_code,
@@ -187,7 +188,7 @@ bool CommandRequestImpl::IsMobileResultSuccess(
 
 bool CommandRequestImpl::IsHMIResultSuccess(
     const hmi_apis::Common_Result::eType result_code) {
-  LOG4CXX_AUTO_TRACE(logger_);
+  SDL_LOG_AUTO_TRACE();
   using namespace helpers;
   return Compare<hmi_apis::Common_Result::eType, EQ, ONE>(
       result_code,
@@ -200,12 +201,12 @@ bool CommandRequestImpl::IsHMIResultSuccess(
 }
 
 void CommandRequestImpl::HandleOnEvent(const event_engine::Event& event) {
-  LOG4CXX_AUTO_TRACE(logger_);
+  SDL_LOG_AUTO_TRACE();
 
   {
     sync_primitives::AutoLock auto_lock(*state_lock_);
     if (RequestState::kTimedOut == current_state_) {
-      LOG4CXX_DEBUG(logger_, "current_state_ = kTimedOut");
+      SDL_LOG_DEBUG("current_state_ = kTimedOut");
       return;
     }
     set_current_state(RequestState::kHandlingResponse);
@@ -219,14 +220,14 @@ void CommandRequestImpl::HandleOnEvent(const event_engine::Event& event) {
   if (!state_lock_weak.expired()) {
     sync_primitives::AutoLock auto_lock(*state_lock_);
     if (RequestState::kHandlingResponse == current_state()) {
-      LOG4CXX_DEBUG(logger_, "Response was not sent, resetting state");
+      SDL_LOG_DEBUG("Response was not sent, resetting state");
       set_current_state(RequestState::kAwaitingResponse);
     }
   }
 }
 
 void CommandRequestImpl::OnUpdateTimeOut() {
-  LOG4CXX_AUTO_TRACE(logger_);
+  SDL_LOG_AUTO_TRACE();
   set_current_state(RequestState::kAwaitingResponse);
 }
 

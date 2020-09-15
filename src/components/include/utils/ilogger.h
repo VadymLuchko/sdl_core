@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Ford Motor Company
+ * Copyright (c) 2020, Ford Motor Company
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -30,27 +30,61 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "utils/log_message_loop_thread.h"
-#include "utils/logger_status.h"
+#pragma once
+
+#include <chrono>
+#include <string>
+#include <thread>
 
 namespace logger {
 
-void LogMessageLoopThread::Handle(const LogMessage message) {
-  message.logger->forcedLog(message.level,
-                            message.entry,
-                            message.timeStamp,
-                            message.location,
-                            message.threadName);
-}
+enum class LogLevel {
+  TRACE_LEVEL,
+  DEBUG_LEVEL,
+  INFO_LEVEL,
+  WARNING_LEVEL,
+  ERROR_LEVEL,
+  FATAL_LEVEL
+};
 
-LogMessageLoopThread::LogMessageLoopThread()
-    : LogMessageLoopThreadTemplate("Logger", this) {}
+struct LocationInfo {
+  std::string file_name;
+  std::string function_name;
+  int line_number;
+};
 
-LogMessageLoopThread::~LogMessageLoopThread() {
-  // we'll have to drop messages
-  // while deleting logger thread
-  logger_status = DeletingLoggerThread;
-  LogMessageLoopThreadTemplate::Shutdown();
-}
+typedef std::chrono::high_resolution_clock::time_point TimePoint;
 
+struct LogMessage {
+  std::string component_;  // <- component_name
+  LogLevel log_level_;
+  std::string log_event_;
+  TimePoint timestamp_;
+  LocationInfo location_;
+  std::thread::id thread_id_;
+};
+
+class Logger {
+ public:
+  virtual bool IsEnabledFor(const std::string& component,
+                            LogLevel log_level) const = 0;
+  virtual void DeInit() = 0;
+  virtual void Flush() = 0;
+  virtual void PushLog(const LogMessage& log_message) = 0;
+  static Logger& instance(Logger* pre_init = nullptr);
+};
+
+class ThirdPartyLoggerInterface {
+ public:
+  virtual void Init() = 0;
+  virtual void DeInit() = 0;
+  virtual bool IsEnabledFor(const std::string& component,
+                            LogLevel log_level) const = 0;
+  virtual void PushLog(const LogMessage& log_message) = 0;
+};
+
+class LoggerInitializer {
+ public:
+  virtual void Init(std::unique_ptr<ThirdPartyLoggerInterface>&& impl) = 0;
+};
 }  // namespace logger
