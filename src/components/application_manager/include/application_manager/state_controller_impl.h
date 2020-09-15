@@ -138,6 +138,10 @@ class StateControllerImpl : public event_engine::EventObserver,
   void DeactivateApp(ApplicationSharedPtr app,
                      const WindowID window_id) OVERRIDE;
 
+  void ResumePostponedWindows(const uint32_t app_id) OVERRIDE;
+
+  void DropPostponedWindows(const uint32_t app_id) OVERRIDE;
+
  private:
   int64_t RequestHMIStateChange(ApplicationConstSharedPtr app,
                                 hmi_apis::Common_HMILevel::eType level,
@@ -434,6 +438,10 @@ class StateControllerImpl : public event_engine::EventObserver,
   std::map<uint32_t, HmiStatePtr> waiting_for_response_;
   std::map<uint32_t, HmiStatePtr> waiting_for_activate_;
   std::vector<DataForActivation> waiting_for_applying_state_;
+
+  typedef std::pair<WindowID, HmiStatePtr> WindowStatePair;
+  typedef std::list<WindowStatePair> WindowStatePairs;
+  std::map<uint32_t, WindowStatePairs> postponed_app_widgets_;
 
   ApplicationManager& app_mngr_;
   sync_primitives::Lock lock_;
