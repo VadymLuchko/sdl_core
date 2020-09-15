@@ -3554,7 +3554,7 @@ TEST_F(
   message[am::strings::msg_params][am::hmi_notification::event_name] =
       hmi_apis::Common_EventTypes::EMBEDDED_NAVI;
   embedded_navi_event.set_smart_object(message);
-  state_ctrl_->on_event(embedded_navi_event);
+  state_ctrl_->HandleOnEvent(embedded_navi_event);
 
   EXPECT_CALL(*media_wep_app_ptr_, is_resuming())
       .Times(2)
