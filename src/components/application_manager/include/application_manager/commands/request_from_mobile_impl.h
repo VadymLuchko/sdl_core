@@ -290,9 +290,6 @@ class RequestFromMobileImpl : public CommandRequestImpl {
    */
   const CommandParametersPermissions& parameters_permissions() const;
 
-  CommandParametersPermissions parameters_permissions_;
-  CommandParametersPermissions removed_parameters_permissions_;
-
   /**
    * @brief hash_update_mode_ Defines whether request must update hash value of
    * application or not
