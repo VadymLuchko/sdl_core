@@ -80,8 +80,8 @@ void RCCommandRequest::OnTimeOut() {
   SDL_LOG_AUTO_TRACE();
   const std::string module_type = ModuleType();
   SetResourceState(module_type, ResourceState::FREE);
-  SendResponse(
-      false, mobile_apis::Result::GENERIC_ERROR, "Request timeout expired");
+
+  RequestFromMobileImpl::OnTimeOut();
 }
 
 bool RCCommandRequest::CheckDriverConsent() {
