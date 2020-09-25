@@ -226,6 +226,32 @@ void CommandRequestImpl::HandleOnEvent(const event_engine::Event& event) {
   }
 }
 
+void CommandRequestImpl::HandleOnEvent(const event_engine::MobileEvent& event) {
+  SDL_LOG_AUTO_TRACE();
+
+  {
+    sync_primitives::AutoLock auto_lock(*state_lock_);
+    if (RequestState::kTimedOut == current_state_) {
+      SDL_LOG_DEBUG("current_state_ = kTimedOut");
+      return;
+    }
+    set_current_state(RequestState::kHandlingResponse);
+  }
+
+  // Pointer to state_lock should be validated as on_event can destroy
+  // this object after on_event call
+  std::weak_ptr<sync_primitives::RecursiveLock> state_lock_weak = state_lock_;
+  on_event(event);
+
+  if (!state_lock_weak.expired()) {
+    sync_primitives::AutoLock auto_lock(*state_lock_);
+    if (RequestState::kHandlingResponse == current_state()) {
+      SDL_LOG_DEBUG("Response was not sent, resetting state");
+      set_current_state(RequestState::kAwaitingResponse);
+    }
+  }
+}
+
 void CommandRequestImpl::OnUpdateTimeOut() {
   SDL_LOG_AUTO_TRACE();
   set_current_state(RequestState::kAwaitingResponse);

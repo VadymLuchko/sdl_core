@@ -28,6 +28,8 @@
 #ifndef SRC_COMPONENTS_APPLICATION_MANAGER_INCLUDE_APPLICATION_MANAGER_COMMANDS_COMMAND_REQUEST_IMPL_H_
 #define SRC_COMPONENTS_APPLICATION_MANAGER_INCLUDE_APPLICATION_MANAGER_COMMANDS_COMMAND_REQUEST_IMPL_H_
 
+#include <memory>
+
 #include "application_manager/application_manager.h"
 #include "application_manager/commands/command_impl.h"
 #include "application_manager/event_engine/event_observer.h"
@@ -37,8 +39,6 @@
 #include "interfaces/MOBILE_API.h"
 #include "smart_objects/smart_object.h"
 #include "utils/lock.h"
-
-#include <memory>
 
 namespace application_manager {
 
@@ -152,6 +152,13 @@ class CommandRequestImpl : public CommandImpl,
    * @param event The received event
    */
   void HandleOnEvent(const event_engine::Event& event) FINAL;
+
+  /**
+   * @brief Default EvenObserver's pure virtual method implementation
+   *
+   * @param event The received event
+   */
+  void HandleOnEvent(const event_engine::MobileEvent& event) FINAL;
 
   /**
    * @brief Function is called by RequestController when request execution time
