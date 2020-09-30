@@ -716,50 +716,51 @@ void StateControllerImpl::UpdateAppWindowsStreamingState(
 }
 
 void StateControllerImpl::HandleOnEvent(
-    const event_engine::MobileEvent& event) {}
-using namespace mobile_apis;
+    const event_engine::MobileEvent& event) {
+  using namespace mobile_apis;
 
-SDL_LOG_AUTO_TRACE();
-SDL_LOG_DEBUG("Received event for function" << event.id());
-switch (event.id()) {
-  case FunctionID::RegisterAppInterfaceID: {
-    auto message = event.smart_object();
-    uint32_t connection_key =
-        message[strings::params][strings::connection_key].asUInt();
-    ApplicationSharedPtr app = app_mngr_.application(connection_key);
+  SDL_LOG_AUTO_TRACE();
+  SDL_LOG_DEBUG("Received event for function" << event.id());
+  switch (event.id()) {
+    case FunctionID::RegisterAppInterfaceID: {
+      auto message = event.smart_object();
+      uint32_t connection_key =
+          message[strings::params][strings::connection_key].asUInt();
+      ApplicationSharedPtr app = app_mngr_.application(connection_key);
 
-    if (app.use_count() == 0) {
-      SDL_LOG_WARN("Application doesn't exist");
-      return;
-    }
-    {
-      sync_primitives::AutoLock autolock(
-          apps_with_pending_hmistatus_notification_lock_);
-
-      auto it = apps_with_pending_hmistatus_notification_.find(app->app_id());
-      if (it == apps_with_pending_hmistatus_notification_.end()) {
-        SDL_LOG_WARN("Application does not have a pending OnHMIStatus");
+      if (app.use_count() == 0) {
+        SDL_LOG_WARN("Application doesn't exist");
         return;
       }
+      {
+        sync_primitives::AutoLock autolock(
+            apps_with_pending_hmistatus_notification_lock_);
 
-      bool success = message[strings::msg_params][strings::success].asBool();
-      if (success) {
-        // Only send notification if RAI was a success
-        auto notification = MessageHelper::CreateHMIStatusNotification(app, 0);
-        app_mngr_.GetRPCService().ManageMobileCommand(
-            notification, commands::Command::SOURCE_SDL);
+        auto it = apps_with_pending_hmistatus_notification_.find(app->app_id());
+        if (it == apps_with_pending_hmistatus_notification_.end()) {
+          SDL_LOG_WARN("Application does not have a pending OnHMIStatus");
+          return;
+        }
+
+        bool success = message[strings::msg_params][strings::success].asBool();
+        if (success) {
+          // Only send notification if RAI was a success
+          auto notification =
+              MessageHelper::CreateHMIStatusNotification(app, 0);
+          app_mngr_.GetRPCService().ManageMobileCommand(
+              notification, commands::Command::SOURCE_SDL);
+        }
+
+        apps_with_pending_hmistatus_notification_.erase(app->app_id());
+        if (apps_with_pending_hmistatus_notification_.empty()) {
+          unsubscribe_from_event(FunctionID::RegisterAppInterfaceID);
+        }
       }
+    } break;
 
-      apps_with_pending_hmistatus_notification_.erase(app->app_id());
-      if (apps_with_pending_hmistatus_notification_.empty()) {
-        unsubscribe_from_event(FunctionID::RegisterAppInterfaceID);
-      }
-    }
-  } break;
-
-  default:
-    break;
-}
+    default:
+      break;
+  }
 }  // namespace application_manager
 
 void StateControllerImpl::HandleOnEvent(const event_engine::Event& event) {
