@@ -407,6 +407,9 @@ void StateControllerImpl::HmiLevelConflictResolver::operator()(
                 applied_->IsFullscreen()
             ? mobile_apis::HMILevel::HMI_LIMITED
             : to_resolve_hmi_level;
+  } else if (mobile_apis::HMILevel::HMI_FULL == to_resolve_hmi_level &&
+             mobile_apis::HMILevel::HMI_LIMITED == applied_hmi_level) {
+    result_hmi_level = mobile_apis::HMILevel::HMI_FULL;
   } else {
     result_hmi_level = mobile_apis::HMILevel::HMI_BACKGROUND;
   }
