@@ -236,6 +236,43 @@ void RequestController::removeNotification(
   SDL_LOG_DEBUG("Cannot find notification");
 }
 
+void RequestController::RetainRequestInstance(const uint32_t connection_key,
+                                              const uint32_t correlation_id) {
+  SDL_LOG_AUTO_TRACE();
+  auto request = waiting_for_response_.Find(connection_key, correlation_id);
+  if (request) {
+    retained_mobile_requests_.insert(request);
+    SDL_LOG_DEBUG("Request (" << connection_key << ", " << correlation_id
+                              << ") has been retained");
+  }
+  SDL_LOG_DEBUG(
+      "Total retained requests: " << retained_mobile_requests_.size());
+}
+
+void RequestController::RemoveRetainedRequest(const uint32_t connection_key,
+                                              const uint32_t correlation_id) {
+  SDL_LOG_AUTO_TRACE();
+  for (auto it = retained_mobile_requests_.begin();
+       it != retained_mobile_requests_.end();
+       ++it) {
+    if ((*it)->request()->connection_key() == connection_key &&
+        (*it)->request()->correlation_id() == correlation_id) {
+      SDL_LOG_DEBUG("Removing request (" << connection_key << ", "
+                                         << correlation_id << ")");
+      retained_mobile_requests_.erase(it);
+      break;
+    }
+  }
+  SDL_LOG_DEBUG(
+      "Total retained requests: " << retained_mobile_requests_.size());
+}
+
+bool RequestController::IsStillWaitingForResponse(
+    const uint32_t connection_key, const uint32_t correlation_id) const {
+  auto request = waiting_for_response_.Find(connection_key, correlation_id);
+  return static_cast<bool>(request);
+}
+
 void RequestController::TerminateRequest(const uint32_t correlation_id,
                                          const uint32_t connection_key,
                                          const int32_t function_id,

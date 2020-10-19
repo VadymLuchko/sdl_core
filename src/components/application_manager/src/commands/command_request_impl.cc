@@ -60,8 +60,7 @@ CommandRequestImpl::CommandRequestImpl(
                   hmi_capabilities,
                   policy_handler)
     , EventObserver(application_manager.event_dispatcher())
-    , current_state_(RequestState::kAwaitingResponse)
-    , state_lock_(std::make_shared<sync_primitives::RecursiveLock>()) {}
+    , current_state_(RequestState::kAwaitingResponse) {}
 
 CommandRequestImpl::~CommandRequestImpl() {
   CleanUp();
@@ -158,12 +157,10 @@ void CommandRequestImpl::on_event(const event_engine::MobileEvent&) {}
 void CommandRequestImpl::HandleTimeOut() {
   SDL_LOG_AUTO_TRACE();
   {
-    sync_primitives::AutoLock auto_lock(*state_lock_);
-    if (helpers::Compare<RequestState, helpers::EQ, helpers::ONE>(
-            current_state(),
-            RequestState::kHandlingResponse,
-            RequestState::kResponded)) {
-      SDL_LOG_DEBUG("Current request state = Responding/Responded");
+    sync_primitives::AutoLock auto_lock(state_lock_);
+    if (RequestState::kProcessEvent == current_state()) {
+      SDL_LOG_DEBUG("Current request state is: "
+                    << current_state() << ". Timeout request ignored");
       return;
     }
     set_current_state(RequestState::kTimedOut);
@@ -204,52 +201,60 @@ void CommandRequestImpl::HandleOnEvent(const event_engine::Event& event) {
   SDL_LOG_AUTO_TRACE();
 
   {
-    sync_primitives::AutoLock auto_lock(*state_lock_);
-    if (RequestState::kTimedOut == current_state_) {
+    sync_primitives::AutoLock auto_lock(state_lock_);
+    if (RequestState::kTimedOut == current_state()) {
       SDL_LOG_DEBUG("current_state_ = kTimedOut");
       return;
     }
-    set_current_state(RequestState::kHandlingResponse);
+    set_current_state(RequestState::kProcessEvent);
   }
 
-  // Pointer to state_lock should be validated as on_event can destroy
-  // this object after on_event call
-  std::weak_ptr<sync_primitives::RecursiveLock> state_lock_weak = state_lock_;
+  const auto conn_key = connection_key();
+  const auto corr_id = correlation_id();
+
+  // Retain request instance to avoid object suicide after on_event()
+  application_manager_.RetainRequestInstance(conn_key, corr_id);
   on_event(event);
 
-  if (!state_lock_weak.expired()) {
-    sync_primitives::AutoLock auto_lock(*state_lock_);
-    if (RequestState::kHandlingResponse == current_state()) {
-      SDL_LOG_DEBUG("Response was not sent, resetting state");
-      set_current_state(RequestState::kAwaitingResponse);
-    }
+  if (application_manager_.IsStillWaitingForResponse(conn_key, corr_id)) {
+    SDL_LOG_DEBUG("Request (" << conn_key << ", " << corr_id
+                              << ") is still waiting for repsonse");
+    set_current_state(RequestState::kAwaitingResponse);
   }
+
+  // Remove request instance from retained to destroy it safely if required
+  application_manager_.RemoveRetainedRequest(conn_key, corr_id);
 }
 
+// FIXME(VSemenyuk): Duplicated code of HandleOnEvent(MobileEvent) and
+// HandleOnEvent(Event) should be moved to a separate function
 void CommandRequestImpl::HandleOnEvent(const event_engine::MobileEvent& event) {
   SDL_LOG_AUTO_TRACE();
 
   {
-    sync_primitives::AutoLock auto_lock(*state_lock_);
-    if (RequestState::kTimedOut == current_state_) {
+    sync_primitives::AutoLock auto_lock(state_lock_);
+    if (RequestState::kTimedOut == current_state()) {
       SDL_LOG_DEBUG("current_state_ = kTimedOut");
       return;
     }
-    set_current_state(RequestState::kHandlingResponse);
+    set_current_state(RequestState::kProcessEvent);
   }
 
-  // Pointer to state_lock should be validated as on_event can destroy
-  // this object after on_event call
-  std::weak_ptr<sync_primitives::RecursiveLock> state_lock_weak = state_lock_;
+  const auto conn_key = connection_key();
+  const auto corr_id = correlation_id();
+
+  // Retain request instance to avoid object suicide after on_event()
+  application_manager_.RetainRequestInstance(conn_key, corr_id);
   on_event(event);
 
-  if (!state_lock_weak.expired()) {
-    sync_primitives::AutoLock auto_lock(*state_lock_);
-    if (RequestState::kHandlingResponse == current_state()) {
-      SDL_LOG_DEBUG("Response was not sent, resetting state");
-      set_current_state(RequestState::kAwaitingResponse);
-    }
+  if (application_manager_.IsStillWaitingForResponse(conn_key, corr_id)) {
+    SDL_LOG_DEBUG("Request (" << conn_key << ", " << corr_id
+                              << ") is still waiting for repsonse");
+    set_current_state(RequestState::kAwaitingResponse);
   }
+
+  // Remove request instance from retained to destroy it safely if required
+  application_manager_.RemoveRetainedRequest(conn_key, corr_id);
 }
 
 void CommandRequestImpl::OnUpdateTimeOut() {
@@ -282,13 +287,13 @@ bool CommandRequestImpl::IsPendingResponseExist() const {
 }
 
 CommandRequestImpl::RequestState CommandRequestImpl::current_state() const {
-  sync_primitives::AutoLock auto_lock(*state_lock_);
+  sync_primitives::AutoLock auto_lock(state_lock_);
   return current_state_;
 }
 
 void CommandRequestImpl::set_current_state(
     const CommandRequestImpl::RequestState state) {
-  sync_primitives::AutoLock auto_lock(*state_lock_);
+  sync_primitives::AutoLock auto_lock(state_lock_);
   current_state_ = state;
 }
 

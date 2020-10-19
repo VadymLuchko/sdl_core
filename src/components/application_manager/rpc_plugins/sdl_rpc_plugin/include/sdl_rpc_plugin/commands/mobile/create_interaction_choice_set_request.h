@@ -128,12 +128,6 @@ class CreateInteractionChoiceSetRequest
   volatile bool error_from_hmi_;
   sync_primitives::Lock error_from_hmi_lock_;
 
-  /**
-   * @brief Flag shows if request already was expired by timeout
-   */
-  volatile bool is_timed_out_;
-  sync_primitives::Lock is_timed_out_lock_;
-
   sync_primitives::RecursiveLock vr_commands_lock_;
   /*
    * @brief Sends VR AddCommand request to HMI

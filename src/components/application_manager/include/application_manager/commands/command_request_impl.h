@@ -52,8 +52,7 @@ class CommandRequestImpl : public CommandImpl,
   enum RequestState {
     kAwaitingResponse = 0,
     kTimedOut,
-    kHandlingResponse,
-    kResponded
+    kProcessEvent,
   };
 
   /**
@@ -278,7 +277,7 @@ class CommandRequestImpl : public CommandImpl,
   /**
    * @brief This lock is used to guarantee thread safe access to request state
    */
-  std::shared_ptr<sync_primitives::RecursiveLock> state_lock_;
+  mutable sync_primitives::RecursiveLock state_lock_;
 
  private:
   DISALLOW_COPY_AND_ASSIGN(CommandRequestImpl);

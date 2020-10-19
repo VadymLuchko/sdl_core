@@ -68,8 +68,7 @@ CreateInteractionChoiceSetRequest::CreateInteractionChoiceSetRequest(
     , expected_chs_count_(0)
     , received_chs_count_(0)
     , should_send_warnings_(false)
-    , error_from_hmi_(false)
-    , is_timed_out_(false) {}
+    , error_from_hmi_(false) {}
 
 CreateInteractionChoiceSetRequest::~CreateInteractionChoiceSetRequest() {
   SDL_LOG_AUTO_TRACE();
@@ -307,6 +306,8 @@ void CreateInteractionChoiceSetRequest::SendVRAddCommandRequests(
   msg_params[strings::app_id] = app->app_id();
   msg_params[strings::grammar_id] = choice_set[strings::grammar_id];
   const uint32_t choice_count = choice_set[strings::choice_set].length();
+  // We have to keep request alive until receive all responses from HMI
+  // according to SDLAQ-CRS-2976
   SetAllowedToTerminate(false);
 
   expected_chs_count_ = choice_count;
@@ -416,9 +417,9 @@ void CreateInteractionChoiceSetRequest::OnTimeOut() {
   SDL_LOG_AUTO_TRACE();
 
   if (!error_from_hmi_) {
-    SendResponse(false, mobile_apis::Result::GENERIC_ERROR);
+    RequestFromMobileImpl::OnTimeOut();
   }
-  RequestFromMobileImpl::OnTimeOut();
+
   DeleteChoices();
 
   auto& resume_ctrl = application_manager_.resume_controller();
@@ -427,10 +428,6 @@ void CreateInteractionChoiceSetRequest::OnTimeOut() {
       correlation_id(),
       static_cast<hmi_apis::FunctionID::eType>(function_id()));
 
-  // We have to keep request alive until receive all responses from HMI
-  // according to SDLAQ-CRS-2976
-  sync_primitives::AutoLock timeout_lock_(is_timed_out_lock_);
-  is_timed_out_ = true;
   application_manager_.TerminateRequest(
       connection_key(), correlation_id(), function_id());
 }

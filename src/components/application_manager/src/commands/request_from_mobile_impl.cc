@@ -240,17 +240,6 @@ void RequestFromMobileImpl::OnTimeOut() {
 
   unsubscribe_from_all_mobile_events();
   unsubscribe_from_all_hmi_events();
-  {
-    // FIXME (dchmerev@luxoft.com): atomic_xchg fits better
-    sync_primitives::AutoLock auto_lock(state_lock_);
-    if (kResponded == current_state_) {
-      SDL_LOG_DEBUG("current_state_ = kResponded");
-      // don't send timeout if request completed
-      return;
-    }
-
-    current_state_ = kTimedOut;
-  }
 
   smart_objects::SmartObjectSPtr response =
       MessageHelper::CreateNegativeResponse(connection_key(),
@@ -274,15 +263,6 @@ void RequestFromMobileImpl::SendResponse(
     const smart_objects::SmartObject* response_params,
     const std::vector<uint8_t> binary_data) {
   SDL_LOG_AUTO_TRACE();
-  {
-    sync_primitives::AutoLock auto_lock(state_lock_);
-    if (kTimedOut == current_state_) {
-      // don't send response if request timeout expired
-      return;
-    }
-
-    current_state_ = RequestState::kResponded;
-  }
 
   smart_objects::SmartObjectSPtr result =
       std::make_shared<smart_objects::SmartObject>();

@@ -177,21 +177,6 @@ TEST_F(RequestFromMobileImplTest, WindowID_ExpectDefaultWindowID) {
             command->window_id());
 }
 
-TEST_F(RequestFromMobileImplTest, OnTimeOut_StateCompleted_UNSUCCESS) {
-  CommandPtr command = CreateCommand<URequestFromMobileImpl>();
-
-  EXPECT_CALL(event_dispatcher_, remove_observer(_));
-
-  EXPECT_CALL(mock_rpc_service_, ManageMobileCommand(_, _)).Times(0);
-
-  // If `command` already done, then state should change to `kResponded`.
-  command->change_current_state(RequestState::kResponded);
-
-  command->HandleTimeOut();
-
-  EXPECT_EQ(RequestState::kResponded, command->get_current_state());
-}
-
 TEST_F(RequestFromMobileImplTest, OnTimeOut_StateAwaitingHMIResponse_SUCCESS) {
   MessageSharedPtr msg = CreateMessage(smart_objects::SmartType_Map);
   (*msg)[strings::params][strings::correlation_id] = kCorrelationId;
@@ -487,19 +472,6 @@ TEST_F(RequestFromMobileImplTest, AddDisallowedParameters_SUCCESS) {
   EXPECT_TRUE((*msg)[strings::msg_params].keyExists(kDisallowedParam1));
 }
 
-TEST_F(RequestFromMobileImplTest, SendResponse_TimedOut_UNSUCCESS) {
-  CommandPtr command = CreateCommand<URequestFromMobileImpl>();
-
-  command->change_current_state(RequestState::kTimedOut);
-
-  EXPECT_CALL(mock_rpc_service_, ManageMobileCommand(_, _)).Times(0);
-
-  // Args do not affect on anything in this case;
-  command->SendResponse(true, kMobResultSuccess, NULL, NULL);
-
-  EXPECT_EQ(RequestState::kTimedOut, command->get_current_state());
-}
-
 TEST_F(RequestFromMobileImplTest, SendResponse_SUCCESS) {
   MessageSharedPtr msg;
   CommandPtr command = CreateCommand<URequestFromMobileImpl>(msg);
@@ -513,8 +485,6 @@ TEST_F(RequestFromMobileImplTest, SendResponse_SUCCESS) {
 
   // Args do not affect on anything in this case;
   command->SendResponse(true, kMobResultSuccess, NULL, NULL);
-
-  EXPECT_EQ(RequestState::kResponded, command->get_current_state());
 
   EXPECT_TRUE(smart_objects::SmartType_Map == (*msg).getType());
 }
@@ -543,8 +513,6 @@ TEST_F(RequestFromMobileImplTest,
       .WillOnce(DoAll(SaveArg<0>(&result), Return(true)));
 
   command->SendResponse(true, kMobResultSuccess, NULL, NULL);
-
-  EXPECT_EQ(RequestState::kResponded, command->get_current_state());
 
   EXPECT_TRUE((*result)[strings::msg_params].keyExists(strings::info));
   EXPECT_FALSE(

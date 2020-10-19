@@ -5018,4 +5018,20 @@ void ApplicationManagerImpl::ChangeAppsHMILevel(
   }
 }
 
+void ApplicationManagerImpl::RetainRequestInstance(
+    const uint32_t connection_key, const uint32_t correlation_id) {
+  request_ctrl_.RetainRequestInstance(connection_key, correlation_id);
+}
+
+void ApplicationManagerImpl::RemoveRetainedRequest(
+    const uint32_t connection_key, const uint32_t correlation_id) {
+  request_ctrl_.RemoveRetainedRequest(connection_key, correlation_id);
+}
+
+bool ApplicationManagerImpl::IsStillWaitingForResponse(
+    const uint32_t connection_key, const uint32_t correlation_id) const {
+  return request_ctrl_.IsStillWaitingForResponse(connection_key,
+                                                 correlation_id);
+}
+
 }  // namespace application_manager

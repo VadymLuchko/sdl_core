@@ -138,6 +138,34 @@ class RequestController {
   void addNotification(const RequestPtr ptr);
 
   /**
+   * @brief RetainRequestInstance retains request instance by its
+   * connection+correlation key
+   * @param connection_key connection key of application
+   * @param correlation_id correlation id of request
+   */
+  void RetainRequestInstance(const uint32_t connection_key,
+                             const uint32_t correlation_id);
+
+  /**
+   * @brief RemoveRetainedRequest removes request instance retained before
+   * @param connection_key connection key of application
+   * @param correlation_id correlation id of request
+   */
+  void RemoveRetainedRequest(const uint32_t connection_key,
+                             const uint32_t correlation_id);
+
+  /**
+   * @brief IsStillWaitingForResponse check if request is still waiting for
+   * response
+   * @param connection_key connection key of application
+   * @param correlation_id correlation id of request
+   * @return true if request is still waiting for response, otherwise returns
+   * false
+   */
+  bool IsStillWaitingForResponse(const uint32_t connection_key,
+                                 const uint32_t correlation_id) const;
+
+  /**
    * @brief Removes request from queue
    *
    * @param correlation_id Active request correlation ID,
@@ -273,12 +301,18 @@ class RequestController {
   std::list<RequestPtr> mobile_request_list_;
   sync_primitives::Lock mobile_request_list_lock_;
 
-  /*
-   * Requests, that are waiting for responses
+  /**
+   * @brief Requests, that are waiting for responses
    * RequestInfoSet provides correct processing of requests with thre same
    * app_id and corr_id
    */
   RequestInfoSet waiting_for_response_;
+
+  /**
+   * @brief Requests, that are retained to be not destroyed right after
+   * sending response to mobile request
+   */
+  HashSortedRequestInfoSet retained_mobile_requests_;
 
   /**
    * @brief Tracker verifying time scale and maximum requests amount in

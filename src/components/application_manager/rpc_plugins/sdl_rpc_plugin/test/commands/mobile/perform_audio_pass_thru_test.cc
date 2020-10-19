@@ -756,8 +756,18 @@ TEST_F(PerformAudioPassThruRequestTest,
   // For setting current_state_ -> kCompleted
 
   EXPECT_CALL(mock_rpc_service_, ManageMobileCommand(_, _));
-  command_sptr_->SendResponse(true, am::mobile_api::Result::SUCCESS);
   EXPECT_CALL(mock_rpc_service_, ManageHMICommand(_, _)).Times(0);
+
+  MessageSharedPtr timeout_response =
+      CreateMessage(smart_objects::SmartType_Map);
+  (*timeout_response)[am::strings::msg_params][am::strings::result_code] =
+      am::mobile_api::Result::GENERIC_ERROR;
+  (*timeout_response)[am::strings::msg_params][am::strings::success] = false;
+
+  EXPECT_CALL(
+      mock_message_helper_,
+      CreateNegativeResponse(_, _, _, mobile_apis::Result::GENERIC_ERROR))
+      .WillOnce(Return(timeout_response));
 
   command_sptr_->OnTimeOut();
 }
