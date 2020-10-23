@@ -125,14 +125,15 @@ TransportAdapter::Error ThreadedSocketConnection::Start() {
 
 void ThreadedSocketConnection::Finalize() {
   SDL_LOG_AUTO_TRACE();
-  if (unexpected_disconnect_) {
-    SDL_LOG_DEBUG("unexpected_disconnect");
-    controller_->ConnectionAborted(
-        device_handle(), application_handle(), CommunicationError());
-  } else {
+//  if (unexpected_disconnect_) {
+//    SDL_LOG_DEBUG("unexpected_disconnect");
+//    controller_->ConnectionAborted(
+//        device_handle(), application_handle(), CommunicationError());
+//  } else {
     SDL_LOG_DEBUG("not unexpected_disconnect");
     controller_->ConnectionFinished(device_handle(), application_handle());
-  }
+    // Something is missing here
+//  }
 
   ShutdownAndCloseSocket();
 }
