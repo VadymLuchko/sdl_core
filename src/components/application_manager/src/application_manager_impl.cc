@@ -710,7 +710,6 @@ ApplicationSharedPtr ApplicationManagerImpl::RegisterApplication(
     application->set_cloud_app_transport_type(
         (*it)->cloud_app_transport_type());
     application->set_hybrid_app_preference((*it)->hybrid_app_preference());
-    apps_to_register_.erase(it);
   }
   apps_to_register_list_lock_ptr_->Release();
 
@@ -4629,7 +4628,8 @@ void ApplicationManagerImpl::AddAppToRegisteredAppList(
     const ApplicationSharedPtr application) {
   SDL_LOG_AUTO_TRACE();
   DCHECK_OR_RETURN_VOID(application);
-  sync_primitives::AutoLock lock(applications_list_lock_ptr_);
+
+  applications_list_lock_ptr_->Acquire();
 
   // Add application to registered app list and set appropriate mark.
   application->MarkRegistered();
@@ -4644,6 +4644,18 @@ void ApplicationManagerImpl::AddAppToRegisteredAppList(
     registered_during_timer_execution_ = true;
   }
   apps_size_ = static_cast<uint32_t>(applications_.size());
+  applications_list_lock_ptr_->Release();
+
+
+  apps_to_register_list_lock_ptr_->Acquire();
+  PolicyAppIdPredicate finder(application->policy_app_id());
+  ApplicationSet::iterator it =
+      std::find_if(apps_to_register_.begin(), apps_to_register_.end(), finder);
+  if (apps_to_register_.end() != it) {
+    apps_to_register_.erase(it);
+  }
+
+  apps_to_register_list_lock_ptr_->Release();
 }
 
 void ApplicationManagerImpl::ApplyFunctorForEachPlugin(
