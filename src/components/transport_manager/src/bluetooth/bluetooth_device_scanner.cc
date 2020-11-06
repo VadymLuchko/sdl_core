@@ -93,6 +93,7 @@ int FindPairedDevs(std::vector<bdaddr_t>* result) {
   DCHECK(result != NULL);
 
 #ifdef BLUEZ5
+  SDL_LOG_TRACE("using bluetoothctl " << result);
   const char* cmd =
       "echo $\'paired-devices\\nquit\' | bluetoothctl | grep ^Device";
 #else
