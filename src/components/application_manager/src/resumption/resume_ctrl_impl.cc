@@ -58,7 +58,8 @@ static mobile_api::HMILevel::eType PickHigherHmiLevel(
     mobile_api::HMILevel::eType val1, mobile_api::HMILevel::eType val2);
 static mobile_api::HMILevel::eType PickLowerHmiLevel(
     mobile_api::HMILevel::eType val1, mobile_api::HMILevel::eType val2);
-static mobile_api::HMILevel::eType ConvertHmiLevelString(const std::string str);
+static mobile_api::HMILevel::eType ConvertHmiLevelString(
+    const std::string& str);
 
 SDL_CREATE_LOG_VARIABLE("Resumption")
 
@@ -158,10 +159,10 @@ void ResumeCtrlImpl::SaveApplication(ApplicationSharedPtr application) {
   resumption_storage_->SaveApplication(application);
 }
 
-bool ResumeCtrlImpl::RestoreAppHMIState(ApplicationSharedPtr application) {
+void ResumeCtrlImpl::RestoreAppHMIState(ApplicationSharedPtr application) {
   using namespace mobile_apis;
   SDL_LOG_AUTO_TRACE();
-  DCHECK_OR_RETURN(application, false);
+  DCHECK(application);
   SDL_LOG_DEBUG("app_id : " << application->app_id() << "; policy_app_id : "
                             << application->policy_app_id());
   const std::string& device_mac = application->mac_address();
@@ -169,7 +170,6 @@ bool ResumeCtrlImpl::RestoreAppHMIState(ApplicationSharedPtr application) {
   bool result = resumption_storage_->GetSavedApplication(
       application->policy_app_id(), device_mac, saved_app);
   if (result) {
-    DCHECK_OR_RETURN(application, false);
     if (saved_app.keyExists(strings::hmi_level)) {
       HMILevel::eType saved_hmi_level;
       if (HMILevel::eType::INVALID_ENUM !=
@@ -206,16 +206,14 @@ bool ResumeCtrlImpl::RestoreAppHMIState(ApplicationSharedPtr application) {
       SetAppHMIState(application, saved_hmi_level, true);
       if (app_exists_in_full_or_limited) {
         SDL_LOG_DEBUG("App exists in full or limited. Do not resume");
-        return false;
+        return;
       }
     } else {
-      result = false;
       SDL_LOG_ERROR("saved app data corrupted");
     }
   } else {
     SDL_LOG_ERROR("Application not saved");
   }
-  return result;
 }
 
 void ResumeCtrlImpl::ProcessSystemCapabilityUpdated(
@@ -261,9 +259,8 @@ void ResumeCtrlImpl::ApplicationResumptiOnTimer() {
       SDL_LOG_ERROR("Invalid app_id = " << *it);
       continue;
     }
-    if (!StartAppHmiStateResumption(app)) {
-      app->set_is_resuming(false);
-    }
+    StartAppHmiStateResumption(app);
+    app->set_is_resuming(false);
   }
   is_resumption_active_ = false;
   waiting_for_timer_.clear();
@@ -491,18 +488,18 @@ void ResumeCtrlImpl::RetryResumption(const uint32_t app_id) {
   AddToResumptionTimerQueue(app_id);
 }
 
-bool ResumeCtrlImpl::StartAppHmiStateResumption(
+void ResumeCtrlImpl::StartAppHmiStateResumption(
     ApplicationSharedPtr application) {
   using namespace date_time;
   SDL_LOG_AUTO_TRACE();
-  DCHECK_OR_RETURN(application, false);
+  DCHECK(application);
   smart_objects::SmartObject saved_app;
   const std::string& device_mac = application->mac_address();
   const bool get_saved_app_result = resumption_storage_->GetSavedApplication(
       application->policy_app_id(), device_mac, saved_app);
   if (!get_saved_app_result) {
     SDL_LOG_ERROR("Application was not saved");
-    return false;
+    return;
   }
 
   const bool is_hmi_level_applicable_to_resume =
@@ -510,7 +507,7 @@ bool ResumeCtrlImpl::StartAppHmiStateResumption(
 
   if (!is_hmi_level_applicable_to_resume) {
     SDL_LOG_DEBUG("No applicable HMI level found for resuming");
-    return false;
+    return;
   }
   const bool is_resume_allowed_by_low_voltage =
       CheckLowVoltageRestrictions(saved_app);
@@ -528,19 +525,17 @@ bool ResumeCtrlImpl::StartAppHmiStateResumption(
 
   if (restore_hmi_level_allowed) {
     SDL_LOG_INFO("Resume application " << application->policy_app_id());
-    const bool hmi_state_restore_result = RestoreAppHMIState(application);
+    RestoreAppHMIState(application);
     if (mobile_apis::HMILevel::eType::INVALID_ENUM !=
         application->deferred_resumption_hmi_level()) {
       // the application has not been fully resumed
-      return false;
+      return;
     }
     RemoveApplicationFromSaved(application);
-    return hmi_state_restore_result;
   } else {
     SDL_LOG_INFO("Do not need to resume application "
                  << application->policy_app_id());
   }
-  return true;
 }
 
 void ResumeCtrlImpl::ResetLaunchTime() {
@@ -1035,7 +1030,7 @@ static mobile_api::HMILevel::eType PickLowerHmiLevel(
 }
 
 static mobile_api::HMILevel::eType ConvertHmiLevelString(
-    const std::string str) {
+    const std::string& str) {
   using namespace mobile_apis;
 
   if ("BACKGROUND" == str) {
@@ -1044,8 +1039,6 @@ static mobile_api::HMILevel::eType ConvertHmiLevelString(
     return HMILevel::HMI_FULL;
   } else if ("LIMITED" == str) {
     return HMILevel::HMI_LIMITED;
-  } else if ("NONE" == str) {
-    return HMILevel::HMI_NONE;
   } else {
     return HMILevel::HMI_NONE;
   }

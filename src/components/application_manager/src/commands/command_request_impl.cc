@@ -257,6 +257,34 @@ void CommandRequestImpl::HandleOnEvent(const event_engine::MobileEvent& event) {
   application_manager_.RemoveRetainedRequest(conn_key, corr_id);
 }
 
+mobile_apis::Result::eType CommandRequestImpl::PrepareResultCodeForResponse(
+    const ResponseInfo& first, const ResponseInfo& second) {
+  SDL_LOG_AUTO_TRACE();
+  if (IsResultCodeUnsupported(first, second) ||
+      IsResultCodeUnsupported(second, first)) {
+    return mobile_apis::Result::UNSUPPORTED_RESOURCE;
+  }
+  if (IsResultCodeWarning(first, second) ||
+      IsResultCodeWarning(second, first)) {
+    return mobile_apis::Result::WARNINGS;
+  }
+  // If response contains erroneous result code SDL need return erroneus
+  // result code.
+  hmi_apis::Common_Result::eType first_result =
+      hmi_apis::Common_Result::INVALID_ENUM;
+  hmi_apis::Common_Result::eType second_result =
+      hmi_apis::Common_Result::INVALID_ENUM;
+  if (!first.is_unsupported_resource) {
+    first_result = first.result_code;
+  }
+  if (!second.is_unsupported_resource) {
+    second_result = second.result_code;
+  }
+  mobile_apis::Result::eType result_code =
+      MessageHelper::HMIToMobileResult(std::max(first_result, second_result));
+  return result_code;
+}
+
 void CommandRequestImpl::OnUpdateTimeOut() {
   SDL_LOG_AUTO_TRACE();
   set_current_state(RequestState::kAwaitingResponse);

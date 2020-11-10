@@ -73,13 +73,13 @@ class AudioStartStreamRequest : public app_mngr::commands::RequestToHMI {
    **/
   void on_event(const app_mngr::event_engine::Event& event) OVERRIDE;
 
+ private:
   /**
    * @brief RetryStartSession resend HMI startSession request if needed.
    * If limit expired, set audio_stream_retry_number counter to 0
    */
   void RetryStartSession();
 
- private:
   uint32_t retry_number_;
   DISALLOW_COPY_AND_ASSIGN(AudioStartStreamRequest);
 };

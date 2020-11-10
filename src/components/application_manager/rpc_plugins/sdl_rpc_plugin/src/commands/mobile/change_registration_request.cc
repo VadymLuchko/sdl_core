@@ -47,7 +47,7 @@
 namespace {
 namespace custom_str = utils::custom_string;
 struct IsSameNickname {
-  IsSameNickname(const custom_str::CustomString& app_name)
+  explicit IsSameNickname(const custom_str::CustomString& app_name)
       : app_name(app_name) {}
   bool operator()(const policy::StringArray::value_type& nickname) const {
     return app_name.CompareIgnoreCase(nickname.c_str());
@@ -508,7 +508,6 @@ bool ChangeRegistrationRequest::IsLanguageSupportedByTTS(
   for (size_t i = 0; i < tts_languages->length(); ++i) {
     if (hmi_display_lang == tts_languages->getElement(i).asInt()) {
       return true;
-      break;
     }
   }
 

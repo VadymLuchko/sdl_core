@@ -250,8 +250,6 @@ class PolicyHandlerTest : public ::testing::Test {
     EXPECT_CALL(*mock_app_, hmi_level(kDefaultWindowId))
         .WillOnce(Return(mobile_apis::HMILevel::HMI_NONE));
 
-    EXPECT_CALL(mock_message_helper_, StringToHMILevel(default_hmi_level))
-        .WillOnce(Return(hmi_level));
     ChangePolicyManagerToMock();
     const policy::EncryptionRequired require_encryption;
     EXPECT_CALL(*mock_policy_manager_, GetAppEncryptionRequired(kPolicyAppId_))
@@ -595,16 +593,13 @@ TEST_F(PolicyHandlerTest,
 TEST_F(PolicyHandlerTest,
        OnPermissionsUpdated_MethodWith3Parameters_FromNONE_ToFULL) {
   // Set hmi level from NONE to FULL
-  const std::string new_kHmiLevel_string = "HMI_FULL";
+  const std::string new_kHmiLevel_string = "FULL";
   mobile_apis::HMILevel::eType new_hmi_level = mobile_apis::HMILevel::HMI_FULL;
   // Check expectations
   EXPECT_CALL(app_manager_, application(kDeviceId, kPolicyAppId_))
       .Times(2)
       .WillRepeatedly(Return(mock_app_));
   EXPECT_CALL(*mock_app_, app_id()).WillOnce(Return(kAppId1_));
-  EXPECT_CALL(mock_message_helper_, StringToHMILevel(new_kHmiLevel_string))
-      .WillOnce(Return(new_hmi_level));
-
   EXPECT_CALL(*mock_app_, hmi_level(kDefaultWindowId))
       .WillOnce(Return(mobile_apis::HMILevel::HMI_NONE));
   ChangePolicyManagerToMock();
@@ -627,7 +622,7 @@ TEST_F(PolicyHandlerTest,
 TEST_F(PolicyHandlerTest,
        OnPermissionsUpdated_MethodWith3Parameters_FromNONE_ToNotFull) {
   // Set hmi level from NONE to Limited
-  const std::string new_kHmiLevel_string = "HMI_LIMITED";
+  const std::string new_kHmiLevel_string = "LIMITED";
   mobile_apis::HMILevel::eType new_hmi_level =
       mobile_apis::HMILevel::HMI_LIMITED;
   // Check expectations
@@ -635,9 +630,6 @@ TEST_F(PolicyHandlerTest,
       .Times(2)
       .WillRepeatedly(Return(mock_app_));
   EXPECT_CALL(*mock_app_, app_id()).WillOnce(Return(kAppId1_));
-  EXPECT_CALL(mock_message_helper_, StringToHMILevel(new_kHmiLevel_string))
-      .WillOnce(Return(new_hmi_level));
-
   EXPECT_CALL(*mock_app_, hmi_level(kDefaultWindowId))
       .WillOnce(Return(mobile_apis::HMILevel::HMI_NONE));
   ChangePolicyManagerToMock();
@@ -660,15 +652,12 @@ TEST_F(PolicyHandlerTest,
 TEST_F(PolicyHandlerTest,
        OnPermissionsUpdated_MethodWith3Parameters_FromNotNONE) {
   // Set hmi level from LIMITED to FULL
-  std::string new_kHmiLevel_string = "HMI_FULL";
-  mobile_apis::HMILevel::eType new_hmi_level = mobile_apis::HMILevel::HMI_FULL;
+  std::string new_kHmiLevel_string = "FULL";
   // Check expectations
   EXPECT_CALL(app_manager_, application(kDeviceId, kPolicyAppId_))
       .Times(2)
       .WillRepeatedly(Return(mock_app_));
   EXPECT_CALL(*mock_app_, app_id()).WillOnce(Return(kAppId1_));
-  EXPECT_CALL(mock_message_helper_, StringToHMILevel(new_kHmiLevel_string))
-      .WillOnce(Return(new_hmi_level));
 
   EXPECT_CALL(*mock_app_, hmi_level(kDefaultWindowId))
       .WillOnce(Return(mobile_apis::HMILevel::HMI_LIMITED));
@@ -718,8 +707,6 @@ TEST_F(PolicyHandlerTest, CheckPermissions) {
               CheckPermissions(
                   kDeviceId, kPolicyAppId_, kHmiLevel_, kRpc_, kRpc_params, _));
 #endif  // EXTERNAL_PROPRIETARY_MODE
-  EXPECT_CALL(mock_message_helper_, StringifiedHMILevel(hmi_level))
-      .WillOnce(Return(kHmiLevel_));
   EXPECT_CALL(mock_message_helper_, GetDeviceMacAddressForHandle(device, _))
       .WillOnce(Return(kDeviceId));
   // Act
@@ -1250,17 +1237,15 @@ TEST_F(PolicyHandlerTest, OnGetUserFriendlyMessage) {
   ChangePolicyManagerToMock();
   // Check expectations
   std::vector<std::string> message_codes;
-  const std::string language("ru-ru");
+  const std::string language("RU-RU");
   const uint32_t correlation_id = 2;
 #ifdef EXTERNAL_PROPRIETARY_MODE
   const hmi_apis::Common_Language::eType default_language =
       hmi_apis::Common_Language::EN_US;
-  const std::string default_language_string = "EN_US";
+  const std::string default_language_string = "EN-US";
   application_manager_test::MockHMICapabilities mock_hmi_capabilities;
   EXPECT_CALL(app_manager_, hmi_capabilities())
       .WillOnce(ReturnRef(mock_hmi_capabilities));
-  EXPECT_CALL(mock_message_helper_, CommonLanguageToString(default_language))
-      .WillOnce(Return(default_language_string));
   EXPECT_CALL(mock_hmi_capabilities, active_ui_language())
       .WillOnce(Return(default_language));
   EXPECT_CALL(
@@ -3075,16 +3060,12 @@ TEST_F(PolicyHandlerTest, GetAppPropertiesStatus_HybridAppNotChanged_SUCCESS) {
 }
 
 TEST_F(PolicyHandlerTest, GetAppPropertiesStatus_PolicyDisabled_FAIL) {
-  ChangePolicyManagerToMock();
-
   EXPECT_CALL(policy_settings_, enable_policy()).WillOnce(Return(false));
   policy_handler_.LoadPolicyLibrary();
 
   smart_objects::SmartObject properties;
   properties[strings::app_id] = kPolicyAppId_;
 
-  EXPECT_CALL(*mock_policy_manager_, GetAppProperties(_, _)).Times(0);
-  EXPECT_CALL(*mock_policy_manager_, GetInitialAppData(_, _, _)).Times(0);
   const auto expected_app_properties_state =
       policy::PolicyHandlerInterface::AppPropertiesState::NO_CHANGES;
   EXPECT_EQ(expected_app_properties_state,
@@ -3116,16 +3097,11 @@ TEST_F(PolicyHandlerTest, PushAppIdToPTUQueue_PolicyEnabled_SUCCESS) {
 }
 
 TEST_F(PolicyHandlerTest, PushAppIdToPTUQueue_PolicyDisabled_FAIL) {
-  ChangePolicyManagerToMock();
-
-  const uint32_t expected_apps_count = 0u;
   EXPECT_CALL(policy_settings_, enable_policy()).WillOnce(Return(false));
-  EXPECT_CALL(*mock_policy_manager_,
-              UpdatePTUReadyAppsCount(expected_apps_count))
-      .Times(0);
 
   policy_handler_.LoadPolicyLibrary();
   policy_handler_.PushAppIdToPTUQueue(kAppId1_);
+  const uint32_t expected_apps_count = 0u;
   EXPECT_EQ(expected_apps_count,
             policy_handler_.applications_ptu_queue_.size());
 }
@@ -3133,16 +3109,6 @@ TEST_F(PolicyHandlerTest, PushAppIdToPTUQueue_PolicyDisabled_FAIL) {
 TEST_F(PolicyHandlerTest, StopRetrySequence_PolicyEnabled_SUCCESS) {
   ChangePolicyManagerToMock();
   EXPECT_CALL(*mock_policy_manager_, StopRetrySequence());
-  policy_handler_.StopRetrySequence();
-}
-
-TEST_F(PolicyHandlerTest, StopRetrySequence_PolicyDisabled_FAIL) {
-  ChangePolicyManagerToMock();
-
-  EXPECT_CALL(policy_settings_, enable_policy()).WillOnce(Return(false));
-  EXPECT_CALL(*mock_policy_manager_, StopRetrySequence()).Times(0);
-
-  policy_handler_.LoadPolicyLibrary();
   policy_handler_.StopRetrySequence();
 }
 
@@ -3156,10 +3122,7 @@ TEST_F(PolicyHandlerTest, GetPolicyTableData_PolicyEnabled_SUCCESS) {
 }
 
 TEST_F(PolicyHandlerTest, GetPolicyTableData_PolicyDisabled_FAIL) {
-  ChangePolicyManagerToMock();
-
   EXPECT_CALL(policy_settings_, enable_policy()).WillOnce(Return(false));
-  EXPECT_CALL(*mock_policy_manager_, GetPolicyTableData()).Times(0);
 
   policy_handler_.LoadPolicyLibrary();
 
@@ -3187,10 +3150,7 @@ TEST_F(PolicyHandlerTest, GetRemovedVehicleDataItems_PolicyEnabled_SUCCESS) {
 TEST_F(PolicyHandlerTest, GetRemovedVehicleDataItems_PolicyDisabled_FAIL) {
   using rpc::policy_table_interface_base::VehicleDataItem;
 
-  ChangePolicyManagerToMock();
-
   EXPECT_CALL(policy_settings_, enable_policy()).WillOnce(Return(false));
-  EXPECT_CALL(*mock_policy_manager_, GetRemovedVehicleDataItems()).Times(0);
 
   policy_handler_.LoadPolicyLibrary();
 
@@ -3228,16 +3188,6 @@ TEST_F(PolicyHandlerTest, OnLocalAppAdded_PolicyEnabled_SUCCESS) {
   policy_handler_.OnLocalAppAdded();
 }
 
-TEST_F(PolicyHandlerTest, OnLocalAppAdded_PolicyDisabled_FAIL) {
-  ChangePolicyManagerToMock();
-
-  EXPECT_CALL(policy_settings_, enable_policy()).WillOnce(Return(false));
-  EXPECT_CALL(*mock_policy_manager_, OnLocalAppAdded()).Times(0);
-
-  policy_handler_.LoadPolicyLibrary();
-  policy_handler_.OnLocalAppAdded();
-}
-
 TEST_F(PolicyHandlerTest, OnPermissionsUpdated_PolicyEnabled_SUCCESS) {
   ChangePolicyManagerToMock();
 
@@ -3257,14 +3207,10 @@ TEST_F(PolicyHandlerTest, OnPermissionsUpdated_PolicyEnabled_SUCCESS) {
 }
 
 TEST_F(PolicyHandlerTest, OnPermissionsUpdated_PolicyDisabled_FAIL) {
-  ChangePolicyManagerToMock();
-
   EXPECT_CALL(policy_settings_, enable_policy()).WillOnce(Return(false));
   policy_handler_.LoadPolicyLibrary();
 
   EXPECT_CALL(app_manager_, application(kDeviceId_, kPolicyAppId_)).Times(0);
-  EXPECT_CALL(*mock_policy_manager_, GetAppEncryptionRequired(kPolicyAppId_))
-      .Times(0);
   EXPECT_CALL(*mock_app_, app_id()).Times(0);
 
   Permissions app_permissions;
@@ -3281,16 +3227,6 @@ TEST_F(PolicyHandlerTest, IsNewApplication_PolicyEnabled_SUCCESS) {
   EXPECT_CALL(*mock_policy_manager_, IsNewApplication(kPolicyAppId_))
       .WillOnce(Return(true));
   EXPECT_TRUE(policy_handler_.IsNewApplication(kPolicyAppId_));
-}
-
-TEST_F(PolicyHandlerTest, IsNewApplication_PolicyDisabled_FAIL) {
-  ChangePolicyManagerToMock();
-
-  EXPECT_CALL(policy_settings_, enable_policy()).WillOnce(Return(false));
-  policy_handler_.LoadPolicyLibrary();
-
-  EXPECT_CALL(*mock_policy_manager_, IsNewApplication(kPolicyAppId_)).Times(0);
-  EXPECT_FALSE(policy_handler_.IsNewApplication(kPolicyAppId_));
 }
 
 }  // namespace policy_handler_test
