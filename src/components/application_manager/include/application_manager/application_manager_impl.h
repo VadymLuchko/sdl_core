@@ -700,7 +700,7 @@ class ApplicationManagerImpl
                         const uint32_t corr_id,
                         const int32_t function_id) OVERRIDE;
 
-  void RetainRequestInstance(const uint32_t connection_key,
+  bool RetainRequestInstance(const uint32_t connection_key,
                              const uint32_t correlation_id) OVERRIDE;
 
   void RemoveRetainedRequest(const uint32_t connection_key,

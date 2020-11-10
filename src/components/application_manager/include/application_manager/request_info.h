@@ -213,6 +213,15 @@ class RequestInfoSet {
    */
   RequestInfoPtr FrontWithNotNullTimeout();
 
+  /**
+   * @brief GetRequestsByConnectionKey gets all pending requests by provided
+   * connection key
+   * @param connection_key connection key for related requests
+   * @return list of all pending requests for a specified connection key
+   */
+  std::list<RequestInfoPtr> GetRequestsByConnectionKey(
+      const uint32_t connection_key);
+
   /*
    * @brief Erase request from colletion by log(n) time
    * @param request_info - request to erase

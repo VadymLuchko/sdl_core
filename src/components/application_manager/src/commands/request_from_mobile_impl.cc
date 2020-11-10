@@ -230,7 +230,12 @@ bool RequestFromMobileImpl::CheckPermissions() {
 }
 
 bool RequestFromMobileImpl::CleanUp() {
-  return true;
+  unsubscribe_from_all_mobile_events();
+  unsubscribe_from_all_hmi_events();  // To prevent on_event calls
+
+  // Cleanup for mobile requests can be done only if OnEvent/OnTimeout events
+  // are not processed at that moment
+  return kAwaitingResponse == current_state();
 }
 
 void RequestFromMobileImpl::Run() {}
@@ -761,7 +766,6 @@ void RequestFromMobileImpl::GetInfo(
 mobile_apis::Result::eType RequestFromMobileImpl::PrepareResultCodeForResponse(
     const ResponseInfo& first, const ResponseInfo& second) {
   SDL_LOG_AUTO_TRACE();
-  mobile_apis::Result::eType result_code = mobile_apis::Result::INVALID_ENUM;
   if (IsResultCodeUnsupported(first, second) ||
       IsResultCodeUnsupported(second, first)) {
     return mobile_apis::Result::UNSUPPORTED_RESOURCE;
@@ -782,7 +786,7 @@ mobile_apis::Result::eType RequestFromMobileImpl::PrepareResultCodeForResponse(
   if (!second.is_unsupported_resource) {
     second_result = second.result_code;
   }
-  result_code =
+  mobile_apis::Result::eType result_code =
       MessageHelper::HMIToMobileResult(std::max(first_result, second_result));
   return result_code;
 }

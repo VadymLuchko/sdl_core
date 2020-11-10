@@ -200,6 +200,14 @@ bool CommandRequestImpl::IsHMIResultSuccess(
 void CommandRequestImpl::HandleOnEvent(const event_engine::Event& event) {
   SDL_LOG_AUTO_TRACE();
 
+  const auto conn_key = connection_key();
+  const auto corr_id = correlation_id();
+
+  // Retain request instance to avoid object suicide after on_event()
+  if (!application_manager_.RetainRequestInstance(conn_key, corr_id)) {
+    return;
+  }
+
   {
     sync_primitives::AutoLock auto_lock(state_lock_);
     if (RequestState::kTimedOut == current_state()) {
@@ -209,11 +217,6 @@ void CommandRequestImpl::HandleOnEvent(const event_engine::Event& event) {
     set_current_state(RequestState::kProcessEvent);
   }
 
-  const auto conn_key = connection_key();
-  const auto corr_id = correlation_id();
-
-  // Retain request instance to avoid object suicide after on_event()
-  application_manager_.RetainRequestInstance(conn_key, corr_id);
   on_event(event);
 
   if (application_manager_.IsStillWaitingForResponse(conn_key, corr_id)) {

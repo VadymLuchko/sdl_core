@@ -236,7 +236,7 @@ void RequestController::removeNotification(
   SDL_LOG_DEBUG("Cannot find notification");
 }
 
-void RequestController::RetainRequestInstance(const uint32_t connection_key,
+bool RequestController::RetainRequestInstance(const uint32_t connection_key,
                                               const uint32_t correlation_id) {
   SDL_LOG_AUTO_TRACE();
   auto request = waiting_for_response_.Find(connection_key, correlation_id);
@@ -247,6 +247,8 @@ void RequestController::RetainRequestInstance(const uint32_t connection_key,
   }
   SDL_LOG_DEBUG(
       "Total retained requests: " << retained_mobile_requests_.size());
+
+  return request ? true : false;
 }
 
 void RequestController::RemoveRetainedRequest(const uint32_t connection_key,
@@ -353,9 +355,27 @@ void RequestController::terminateWaitingForExecutionAppRequests(
 void RequestController::terminateWaitingForResponseAppRequests(
     const uint32_t& app_id) {
   SDL_LOG_AUTO_TRACE();
-  waiting_for_response_.RemoveByConnectionKey(app_id);
-  SDL_LOG_DEBUG(
-      "Waiting for response count : " << waiting_for_response_.Size());
+  SDL_LOG_DEBUG("Waiting for response count before cleanup: "
+                << waiting_for_response_.Size());
+
+  auto pending_requests =
+      waiting_for_response_.GetRequestsByConnectionKey(app_id);
+  for (auto it = pending_requests.begin(); it != pending_requests.end(); ++it) {
+    auto request_ptr = (*it)->request();
+    if (!request_ptr->CleanUp()) {
+      SDL_LOG_WARN("Request with corr_id: "
+                   << request_ptr->correlation_id()
+                   << " can't be terminated right now. Keep in the queue");
+      continue;
+    }
+
+    SDL_LOG_DEBUG(
+        "Terminating request with corr_id: " << request_ptr->correlation_id());
+    waiting_for_response_.RemoveRequest(*it);
+  }
+
+  SDL_LOG_DEBUG("Waiting for response count after cleanup: "
+                << waiting_for_response_.Size());
 }
 
 void RequestController::terminateAppRequests(const uint32_t& app_id) {
@@ -397,7 +417,6 @@ void RequestController::updateRequestTimeout(const uint32_t& app_id,
   SDL_LOG_DEBUG(
       "New_timeout is NULL. RequestCtrl will "
       "not manage this request any more");
-
   RequestInfoPtr request_info =
       waiting_for_response_.Find(app_id, correlation_id);
   if (request_info) {
@@ -445,6 +464,7 @@ void RequestController::TimeoutThread() {
       timer_condition_.Wait(auto_lock);
       continue;
     }
+
     if (!probably_expired->isExpired()) {
       SDL_LOG_DEBUG("Timeout for "
                     << (RequestInfo::HMIRequest ==
@@ -475,6 +495,7 @@ void RequestController::TimeoutThread() {
     const uint32_t expired_app_id = probably_expired->app_id();
 
     probably_expired->request()->HandleTimeOut();
+
     if (RequestInfo::HmiConnectionKey == probably_expired->app_id()) {
       SDL_LOG_DEBUG("Erase HMI request: " << probably_expired->requestId());
       waiting_for_response_.RemoveRequest(probably_expired);

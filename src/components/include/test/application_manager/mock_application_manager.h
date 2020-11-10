@@ -394,7 +394,7 @@ class MockApplicationManager : public application_manager::ApplicationManager {
   MOCK_CONST_METHOD0(get_current_audio_source, uint32_t());
   MOCK_METHOD1(set_current_audio_source, void(const uint32_t));
   MOCK_METHOD2(RetainRequestInstance,
-               void(const uint32_t connection_key,
+               bool(const uint32_t connection_key,
                     const uint32_t correlation_id));
   MOCK_METHOD2(RemoveRetainedRequest,
                void(const uint32_t connection_key,

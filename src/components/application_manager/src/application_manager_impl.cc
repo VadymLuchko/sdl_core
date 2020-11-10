@@ -4988,9 +4988,9 @@ void ApplicationManagerImpl::ChangeAppsHMILevel(
   }
 }
 
-void ApplicationManagerImpl::RetainRequestInstance(
+bool ApplicationManagerImpl::RetainRequestInstance(
     const uint32_t connection_key, const uint32_t correlation_id) {
-  request_ctrl_.RetainRequestInstance(connection_key, correlation_id);
+  return request_ctrl_.RetainRequestInstance(connection_key, correlation_id);
 }
 
 void ApplicationManagerImpl::RemoveRetainedRequest(

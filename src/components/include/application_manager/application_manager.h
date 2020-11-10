@@ -677,8 +677,10 @@ class ApplicationManager {
    * connection+correlation key
    * @param connection_key connection key of application
    * @param correlation_id correlation id of request
+   * @return true if request was rerained. false if the request with such
+   * connection+correlation key was not found
    */
-  virtual void RetainRequestInstance(const uint32_t connection_key,
+  virtual bool RetainRequestInstance(const uint32_t connection_key,
                                      const uint32_t correlation_id) = 0;
 
   /**
