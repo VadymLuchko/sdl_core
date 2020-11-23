@@ -153,11 +153,6 @@ void ResetGlobalPropertiesRequest::on_event(const event_engine::Event& event) {
                &(message[strings::msg_params]));
 }
 
-void ResetGlobalPropertiesRequest::OnTimeOut() {
-  SDL_LOG_AUTO_TRACE();
-  RequestFromMobileImpl::OnTimeOut();
-}
-
 bool ResetGlobalPropertiesRequest::Init() {
   hash_update_mode_ = HashUpdateMode::kDoHashUpdate;
   return true;

@@ -37,16 +37,6 @@
 #include "application_manager/message_helper.h"
 
 namespace application_manager {
-
-namespace {
-struct AppExtensionPredicate {
-  AppExtensionUID uid;
-  bool operator()(const ApplicationSharedPtr app) {
-    return app ? (app->QueryInterface(uid).use_count() != 0) : false;
-  }
-};
-}  // namespace
-
 namespace commands {
 
 SDL_CREATE_LOG_VARIABLE("Commands")

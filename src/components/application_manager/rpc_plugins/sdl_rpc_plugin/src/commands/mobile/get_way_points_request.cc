@@ -78,11 +78,6 @@ void GetWayPointsRequest::Run() {
                  true);
 }
 
-void GetWayPointsRequest::OnTimeOut() {
-  SDL_LOG_AUTO_TRACE();
-  RequestFromMobileImpl::OnTimeOut();
-}
-
 void GetWayPointsRequest::on_event(const event_engine::Event& event) {
   SDL_LOG_AUTO_TRACE();
   const smart_objects::SmartObject& message = event.smart_object();

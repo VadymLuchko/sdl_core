@@ -84,8 +84,6 @@ class PerformInteractionRequest
 
   void OnTimeOut() FINAL;
 
-  void StartAwaitForInterfaces();
-
  protected:
   /**
    * @brief Prepare result code for sending to mobile application

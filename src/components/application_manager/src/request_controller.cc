@@ -48,7 +48,7 @@ SDL_CREATE_LOG_VARIABLE("RequestController")
 
 RequestController::RequestController(
     const RequestControlerSettings& settings,
-    event_engine::EventDispatcher& event_observer)
+    event_engine::EventDispatcher& event_dispatcher)
     : pool_state_(UNDEFINED)
     , pool_size_(settings.thread_pool_size())
     , request_tracker_(settings)
@@ -59,7 +59,7 @@ RequestController::RequestController(
     , timer_stop_flag_(false)
     , is_low_voltage_(false)
     , settings_(settings)
-    , event_dispatcher_(event_observer) {
+    , event_dispatcher_(event_dispatcher) {
   SDL_LOG_AUTO_TRACE();
   InitializeThreadpool();
   timer_.Start(0, timer::kSingleShot);
@@ -248,7 +248,7 @@ bool RequestController::RetainRequestInstance(const uint32_t connection_key,
   SDL_LOG_DEBUG(
       "Total retained requests: " << retained_mobile_requests_.size());
 
-  return request ? true : false;
+  return static_cast<bool>(request);
 }
 
 void RequestController::RemoveRetainedRequest(const uint32_t connection_key,
@@ -464,7 +464,6 @@ void RequestController::TimeoutThread() {
       timer_condition_.Wait(auto_lock);
       continue;
     }
-
     if (!probably_expired->isExpired()) {
       SDL_LOG_DEBUG("Timeout for "
                     << (RequestInfo::HMIRequest ==

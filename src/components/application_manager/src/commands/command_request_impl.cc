@@ -34,16 +34,6 @@
 #include "smart_objects/smart_object.h"
 
 namespace application_manager {
-
-namespace {
-struct AppExtensionPredicate {
-  AppExtensionUID uid;
-  bool operator()(const ApplicationSharedPtr app) {
-    return app ? (app->QueryInterface(uid).use_count() != 0) : false;
-  }
-};
-}  // namespace
-
 namespace commands {
 
 SDL_CREATE_LOG_VARIABLE("Commands")
@@ -66,39 +56,7 @@ CommandRequestImpl::~CommandRequestImpl() {
   CleanUp();
 }
 
-bool CommandRequestImpl::CheckPermissions() {
-  return CommandImpl::CheckPermissions();
-}
-
-bool CommandRequestImpl::Init() {
-  return CommandImpl::Init();
-}
-
-bool CommandRequestImpl::CleanUp() {
-  return CommandImpl::CleanUp();
-}
-
 void CommandRequestImpl::Run() {}
-
-uint32_t CommandRequestImpl::default_timeout() const {
-  return CommandImpl::default_timeout();
-}
-
-uint32_t CommandRequestImpl::correlation_id() const {
-  return CommandImpl::correlation_id();
-}
-
-int32_t CommandRequestImpl::function_id() const {
-  return CommandImpl::function_id();
-}
-
-uint32_t CommandRequestImpl::connection_key() const {
-  return CommandImpl::connection_key();
-}
-
-bool CommandRequestImpl::AllowedToTerminate() {
-  return CommandImpl::AllowedToTerminate();
-}
 
 bool CommandRequestImpl::CheckAllowedParameters(
     const Command::CommandSource source) {
@@ -133,20 +91,6 @@ void CommandRequestImpl::SendMobileRequest(
   if (!rpc_service_.ManageMobileCommand(msg, SOURCE_SDL)) {
     SDL_LOG_ERROR("Unable to send request to mobile");
   }
-}
-
-void CommandRequestImpl::SetAllowedToTerminate(const bool allowed) {
-  return CommandImpl::SetAllowedToTerminate(allowed);
-}
-
-bool CommandRequestImpl::ReplaceMobileWithHMIAppId(
-    ns_smart_device_link::ns_smart_objects::SmartObject& message) {
-  return CommandImpl::ReplaceMobileWithHMIAppId(message);
-}
-
-bool CommandRequestImpl::ReplaceHMIWithMobileAppId(
-    ns_smart_device_link::ns_smart_objects::SmartObject& message) {
-  return CommandImpl::ReplaceHMIWithMobileAppId(message);
 }
 
 void CommandRequestImpl::OnTimeOut() {}
@@ -197,7 +141,7 @@ bool CommandRequestImpl::IsHMIResultSuccess(
       hmi_apis::Common_Result::TRUNCATED_DATA);
 }
 
-void CommandRequestImpl::HandleOnEvent(const event_engine::Event& event) {
+bool CommandRequestImpl::StartOnEventHandling() {
   SDL_LOG_AUTO_TRACE();
 
   const auto conn_key = connection_key();
@@ -205,19 +149,24 @@ void CommandRequestImpl::HandleOnEvent(const event_engine::Event& event) {
 
   // Retain request instance to avoid object suicide after on_event()
   if (!application_manager_.RetainRequestInstance(conn_key, corr_id)) {
-    return;
+    return false;
   }
 
   {
     sync_primitives::AutoLock auto_lock(state_lock_);
     if (RequestState::kTimedOut == current_state()) {
       SDL_LOG_DEBUG("current_state_ = kTimedOut");
-      return;
+      return false;
     }
     set_current_state(RequestState::kProcessEvent);
   }
 
-  on_event(event);
+  return true;
+}
+
+void CommandRequestImpl::FinalizeOnEventHandling() {
+  const auto conn_key = connection_key();
+  const auto corr_id = correlation_id();
 
   if (application_manager_.IsStillWaitingForResponse(conn_key, corr_id)) {
     SDL_LOG_DEBUG("Request (" << conn_key << ", " << corr_id
@@ -229,35 +178,22 @@ void CommandRequestImpl::HandleOnEvent(const event_engine::Event& event) {
   application_manager_.RemoveRetainedRequest(conn_key, corr_id);
 }
 
-// FIXME(VSemenyuk): Duplicated code of HandleOnEvent(MobileEvent) and
-// HandleOnEvent(Event) should be moved to a separate function
-void CommandRequestImpl::HandleOnEvent(const event_engine::MobileEvent& event) {
+void CommandRequestImpl::HandleOnEvent(const event_engine::Event& event) {
   SDL_LOG_AUTO_TRACE();
 
-  {
-    sync_primitives::AutoLock auto_lock(state_lock_);
-    if (RequestState::kTimedOut == current_state()) {
-      SDL_LOG_DEBUG("current_state_ = kTimedOut");
-      return;
-    }
-    set_current_state(RequestState::kProcessEvent);
+  if (!StartOnEventHandling()) {
+    return;
   }
-
-  const auto conn_key = connection_key();
-  const auto corr_id = correlation_id();
-
-  // Retain request instance to avoid object suicide after on_event()
-  application_manager_.RetainRequestInstance(conn_key, corr_id);
   on_event(event);
+  FinalizeOnEventHandling();
+}
 
-  if (application_manager_.IsStillWaitingForResponse(conn_key, corr_id)) {
-    SDL_LOG_DEBUG("Request (" << conn_key << ", " << corr_id
-                              << ") is still waiting for repsonse");
-    set_current_state(RequestState::kAwaitingResponse);
+void CommandRequestImpl::HandleOnEvent(const event_engine::MobileEvent& event) {
+  if (!StartOnEventHandling()) {
+    return;
   }
-
-  // Remove request instance from retained to destroy it safely if required
-  application_manager_.RemoveRetainedRequest(conn_key, corr_id);
+  on_event(event);
+  FinalizeOnEventHandling();
 }
 
 void CommandRequestImpl::OnUpdateTimeOut() {

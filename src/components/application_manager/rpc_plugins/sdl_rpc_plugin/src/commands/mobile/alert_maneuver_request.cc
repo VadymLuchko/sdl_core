@@ -154,7 +154,6 @@ void AlertManeuverRequest::Run() {
     StartAwaitForInterface(HmiInterfaces::HMI_INTERFACE_TTS);
     if (IsInterfaceAwaited(HmiInterfaces::HMI_INTERFACE_TTS)) {
       SendHMIRequest(hmi_apis::FunctionID::TTS_Speak, &msg_params, true);
-      tts_speak_is_sent_ = true;
     }
   }
 }

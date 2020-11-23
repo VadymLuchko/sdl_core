@@ -123,7 +123,6 @@ class CommandsTest : public ::testing::Test {
   std::shared_ptr<Command> CreateCommand(const uint32_t timeout,
                                          MessageSharedPtr& msg) {
     InitCommand(timeout);
-
     return std::make_shared<Command>((msg ? msg : msg = CreateMessage()),
                                      app_mngr_,
                                      mock_rpc_service_,
@@ -149,9 +148,20 @@ class CommandsTest : public ::testing::Test {
   }
 
   void InitEventDispatcher() {
-    EXPECT_CALL(app_mngr_, event_dispatcher())
-        .WillOnce(ReturnRef(event_dispatcher_));
-    EXPECT_CALL(event_dispatcher_, remove_observer(_));
+    ON_CALL(app_mngr_, event_dispatcher())
+        .WillByDefault(ReturnRef(event_dispatcher_));
+  }
+
+  void InitNegativeResponse() {
+    MessageSharedPtr timeout_response =
+        CommandsTest<kIsNice>::CreateMessage(smart_objects::SmartType_Map);
+    (*timeout_response)[am::strings::msg_params][am::strings::result_code] =
+        am::mobile_api::Result::GENERIC_ERROR;
+    (*timeout_response)[am::strings::msg_params][am::strings::success] = false;
+
+    ON_CALL(mock_message_helper_,
+            CreateNegativeResponse(_, _, _, mobile_apis::Result::GENERIC_ERROR))
+        .WillByDefault(Return(timeout_response));
   }
 
   enum { kDefaultTimeout_ = 100 };

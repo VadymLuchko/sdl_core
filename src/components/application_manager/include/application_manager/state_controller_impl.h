@@ -48,14 +48,6 @@
 
 namespace application_manager {
 
-struct DataForActivation {
-  DataForActivation(uint32_t app_id, HmiStatePtr state, bool send_activate_app)
-      : app_id_(app_id), state_(state), send_activate_app_(send_activate_app) {}
-  uint32_t app_id_;
-  HmiStatePtr state_;
-  bool send_activate_app_;
-};
-
 class StateControllerImpl : public event_engine::EventObserver,
                             public StateController {
  public:
@@ -115,8 +107,6 @@ class StateControllerImpl : public event_engine::EventObserver,
   void HandleOnEvent(const event_engine::Event& event) OVERRIDE;
   void HandleOnEvent(const event_engine::MobileEvent& event) OVERRIDE;
 
-  void OnTimeOutActivateAppRequest(const uint32_t hmi_app_id) OVERRIDE;
-
   void OnAppWindowAdded(
       ApplicationSharedPtr app,
       const WindowID window_id,
@@ -149,6 +139,13 @@ class StateControllerImpl : public event_engine::EventObserver,
   int64_t RequestHMIStateChange(ApplicationConstSharedPtr app,
                                 hmi_apis::Common_HMILevel::eType level,
                                 bool send_policy_priority);
+
+  /**
+   * @brief Starts to process hmi states for applications that
+   * waiting for finishing of activate app.
+   */
+  void ProcessSavingHMIState();
+
   /**
    * @brief The HmiLevelConflictResolver struct
    * Move other application to HmiStates if applied moved to FULL or LIMITED
@@ -439,8 +436,6 @@ class StateControllerImpl : public event_engine::EventObserver,
   mutable sync_primitives::Lock active_states_lock_;
 
   std::map<uint32_t, HmiStatePtr> waiting_for_response_;
-  std::map<uint32_t, HmiStatePtr> waiting_for_activate_;
-  std::vector<DataForActivation> waiting_for_applying_state_;
 
   typedef std::pair<WindowID, HmiStatePtr> WindowStatePair;
   typedef std::list<WindowStatePair> WindowStatePairs;
@@ -449,7 +444,6 @@ class StateControllerImpl : public event_engine::EventObserver,
   std::unordered_set<uint32_t> apps_with_pending_hmistatus_notification_;
   mutable sync_primitives::Lock apps_with_pending_hmistatus_notification_lock_;
   ApplicationManager& app_mngr_;
-  sync_primitives::Lock lock_;
   PostponedActivationController postponed_activation_controller_;
 };
 }  // namespace application_manager

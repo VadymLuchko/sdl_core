@@ -66,8 +66,6 @@ class GetWayPointsRequest : public app_mngr::commands::RequestFromMobileImpl {
 
   void on_event(const app_mngr::event_engine::Event& event) FINAL;
 
-  void OnTimeOut() FINAL;
-
  private:
   DISALLOW_COPY_AND_ASSIGN(GetWayPointsRequest);
 };

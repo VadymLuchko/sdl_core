@@ -95,8 +95,6 @@ class AlertManeuverRequest : public app_mngr::commands::RequestFromMobileImpl {
   std::string info_navi_;
   std::string info_tts_;
   app_mngr::commands::Pending pending_requests_;
-  bool navi_alert_maneuver_is_sent_;
-  bool tts_speak_is_sent_;
 
   DISALLOW_COPY_AND_ASSIGN(AlertManeuverRequest);
 };

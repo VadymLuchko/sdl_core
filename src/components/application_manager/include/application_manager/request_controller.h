@@ -89,7 +89,7 @@ class RequestController {
    *
    */
   RequestController(const RequestControlerSettings& settings,
-                    event_engine::EventDispatcher& event_observer);
+                    event_engine::EventDispatcher& event_disptacher);
 
   /**
    * @brief Class destructor

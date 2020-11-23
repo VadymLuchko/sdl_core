@@ -304,8 +304,6 @@ void CreateInteractionChoiceSetRequest::SendVRAddCommandRequests(
   msg_params[strings::app_id] = app->app_id();
   msg_params[strings::grammar_id] = choice_set[strings::grammar_id];
   const uint32_t choice_count = choice_set[strings::choice_set].length();
-  // We have to keep request alive until receive all responses from HMI
-  // according to SDLAQ-CRS-2976
   SetAllowedToTerminate(false);
 
   expected_chs_count_ = choice_count;

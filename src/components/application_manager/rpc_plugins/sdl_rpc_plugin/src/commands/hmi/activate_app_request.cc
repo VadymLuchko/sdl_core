@@ -75,12 +75,6 @@ void ActivateAppRequest::Run() {
   SDL_LOG_TRACE("exit");
 }
 
-void ActivateAppRequest::OnTimeOut() {
-  SDL_LOG_AUTO_TRACE();
-  application_manager_.state_controller().OnTimeOutActivateAppRequest(
-      RequestToHMI::application_id());
-}
-
 }  // namespace commands
 
 }  // namespace sdl_rpc_plugin

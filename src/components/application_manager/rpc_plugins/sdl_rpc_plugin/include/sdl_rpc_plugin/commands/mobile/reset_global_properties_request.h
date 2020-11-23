@@ -73,8 +73,6 @@ class ResetGlobalPropertiesRequest
 
   void on_event(const app_mngr::event_engine::Event& event) FINAL;
 
-  void OnTimeOut() FINAL;
-
   /**
    * @brief Init sets hash update mode for request
    */

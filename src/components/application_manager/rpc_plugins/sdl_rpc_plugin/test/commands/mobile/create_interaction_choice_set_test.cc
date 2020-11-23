@@ -165,11 +165,6 @@ class CreateInteractionChoiceSetResponseTest
     : public CommandsTest<CommandsTestMocks::kIsNice> {};
 
 TEST_F(CreateInteractionChoiceSetRequestTest, OnTimeout_GENERIC_ERROR) {
-  MessageSharedPtr msg_vr = CreateMessage(smart_objects::SmartType_Map);
-  (*msg_vr)[strings::msg_params][strings::result_code] =
-      am::mobile_api::Result::GENERIC_ERROR;
-  (*msg_vr)[strings::msg_params][strings::success] = false;
-
   std::shared_ptr<CreateInteractionChoiceSetRequest> req_vr =
       CreateCommand<CreateInteractionChoiceSetRequest>();
 
@@ -179,10 +174,7 @@ TEST_F(CreateInteractionChoiceSetRequestTest, OnTimeout_GENERIC_ERROR) {
   ON_CALL(*mock_app, get_grammar_id()).WillByDefault(Return(kConnectionKey));
   ON_CALL(*mock_app, RemoveCommand(_)).WillByDefault(Return());
 
-  EXPECT_CALL(
-      mock_message_helper_,
-      CreateNegativeResponse(_, _, _, mobile_apis::Result::GENERIC_ERROR))
-      .WillOnce(Return(msg_vr));
+  InitNegativeResponse();
 
   MessageSharedPtr vr_command_result;
 
@@ -711,16 +703,7 @@ TEST_F(CreateInteractionChoiceSetRequestTest,
        OnTimeOut_InvalidErrorFromHMI_UNSUCCESS) {
   EXPECT_CALL(app_mngr_, application(_)).WillOnce(Return(mock_app_));
 
-  MessageSharedPtr timeout_response =
-      CreateMessage(smart_objects::SmartType_Map);
-  (*timeout_response)[am::strings::msg_params][am::strings::result_code] =
-      am::mobile_api::Result::GENERIC_ERROR;
-  (*timeout_response)[am::strings::msg_params][am::strings::success] = false;
-
-  EXPECT_CALL(
-      mock_message_helper_,
-      CreateNegativeResponse(_, _, _, mobile_apis::Result::GENERIC_ERROR))
-      .WillOnce(Return(timeout_response));
+  InitNegativeResponse();
 
   EXPECT_CALL(mock_rpc_service_,
               ManageMobileCommand(
@@ -887,16 +870,7 @@ TEST_F(CreateInteractionChoiceSetRequestTest,
       .WillOnce(Return(mock_app_));
   EXPECT_CALL(*mock_app_, RemoveChoiceSet(_));
 
-  MessageSharedPtr timeout_response =
-      CreateMessage(smart_objects::SmartType_Map);
-  (*timeout_response)[am::strings::msg_params][am::strings::result_code] =
-      am::mobile_api::Result::GENERIC_ERROR;
-  (*timeout_response)[am::strings::msg_params][am::strings::success] = false;
-
-  EXPECT_CALL(
-      mock_message_helper_,
-      CreateNegativeResponse(_, _, _, mobile_apis::Result::GENERIC_ERROR))
-      .WillOnce(Return(timeout_response));
+  InitNegativeResponse();
 
   command_->OnTimeOut();
 }

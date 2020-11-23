@@ -1340,15 +1340,6 @@ bool StateControllerImpl::IsStateActive(HmiState::StateID state_id) const {
   return false;
 }
 
-void StateControllerImpl::OnTimeOutActivateAppRequest(
-    const uint32_t hmi_app_id) {
-  SDL_LOG_AUTO_TRACE();
-  SDL_LOG_INFO(
-      "TimeOut was received for"
-      "application with hmi_app_id = "
-      << hmi_app_id);
-}
-
 HmiStatePtr StateControllerImpl::CreateHmiState(
     std::shared_ptr<Application> app, HmiState::StateID state_id) const {
   using namespace utils;

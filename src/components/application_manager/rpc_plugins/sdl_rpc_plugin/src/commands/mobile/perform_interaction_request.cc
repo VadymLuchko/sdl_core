@@ -88,11 +88,6 @@ PerformInteractionRequest::PerformInteractionRequest(
 
 PerformInteractionRequest::~PerformInteractionRequest() {}
 
-void PerformInteractionRequest::StartAwaitForInterfaces() {
-  StartAwaitForInterface(HmiInterfaces::HMI_INTERFACE_VR);
-  StartAwaitForInterface(HmiInterfaces::HMI_INTERFACE_UI);
-}
-
 bool PerformInteractionRequest::Init() {
   /* Timeout in milliseconds.
      If omitted a standard value of 10000 milliseconds is used.*/

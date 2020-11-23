@@ -72,11 +72,6 @@ class CommandRequestImpl : public CommandImpl,
    **/
   virtual ~CommandRequestImpl();
 
-  /**
-   * @brief Checks command permissions according to policy table
-   */
-  bool CheckPermissions() OVERRIDE;
-
   void SendMobileRequest(const mobile_apis::FunctionID::eType& function_id,
                          smart_objects::SmartObjectSPtr msg,
                          bool use_events = false);
@@ -100,43 +95,11 @@ class CommandRequestImpl : public CommandImpl,
       const hmi_apis::Common_Result::eType result_code);
 
   /**
-   * @brief Init required by command resources
-   **/
-  bool Init() OVERRIDE;
-
-  /**
-   * @brief Cleanup all resources used by command
-   **/
-  bool CleanUp() OVERRIDE;
-
-  /**
    * @brief Execute corresponding command by calling the action on reciever
    **/
   void Run() OVERRIDE;
-  /**
-   * @brief Retrieves request default timeout.
-   * If request has a custom timeout, request_timeout_ should be reassign to it
-   *
-   * @return Request default timeout
-   */
-  uint32_t default_timeout() const OVERRIDE;
 
   virtual void on_event(const event_engine::MobileEvent& event);
-
-  /*
-   * @brief Retrieves correlation ID
-   */
-  uint32_t correlation_id() const OVERRIDE;
-
-  /*
-   * @brief Retrieves connection key
-   */
-  uint32_t connection_key() const OVERRIDE;
-
-  /*
-   * @brief Retrieves request ID
-   */
-  int32_t function_id() const OVERRIDE;
 
   /*
    * @brief Function is called by RequestController when request execution time
@@ -170,29 +133,6 @@ class CommandRequestImpl : public CommandImpl,
   virtual void on_event(const event_engine::Event&);
 
   void OnUpdateTimeOut() OVERRIDE;
-
-#ifdef __QNX__
-  /*
-   * @brief Function is called by RequestController when message was sent to HMI
-   */
-  void OnHMIMessageSent() OVERRIDE;
-#endif  // __QNX__
-
-  /**
-   * @brief AllowedToTerminate tells request Controller if it can terminate this
-   * request by response.
-   * By default, RequestCtrl should terminate all requests by their responses.
-   *  If request need to terminate itself, it should override this function
-   * false
-   * @return allowed_to_terminate_ value
-   */
-  bool AllowedToTerminate() OVERRIDE;
-
-  /**
-   * @brief SetAllowedToTerminate set up allowed to terminate flag.
-   * If true, request controller will terminate request on response
-   */
-  void SetAllowedToTerminate(const bool allowed) OVERRIDE;
 
  protected:
   /**
@@ -237,20 +177,6 @@ class CommandRequestImpl : public CommandImpl,
    */
 
   /**
-   * @brief Parses mobile message and replaces mobile app id with HMI app id
-   * @param message Message to replace its ids
-   * @return True if replacement succeeded, otherwise - false
-   */
-  bool ReplaceMobileWithHMIAppId(smart_objects::SmartObject& message) OVERRIDE;
-
-  /**
-   * @brief Parses message from HMI and replaces HMI app id with mobile app id
-   * @param message Message to replace its ids
-   * @return True if replacement succeeded, otherwise - false
-   */
-  bool ReplaceHMIWithMobileAppId(smart_objects::SmartObject& message) OVERRIDE;
-
-  /**
    * @brief Returns current state of request
    * @return current request state. E.g. kAwaitingResponse, kTimedOut,
    * kResponded
@@ -272,15 +198,28 @@ class CommandRequestImpl : public CommandImpl,
 
   mutable sync_primitives::Lock awaiting_response_interfaces_lock_;
 
-  RequestState current_state_;
-
   /**
    * @brief This lock is used to guarantee thread safe access to request state
    */
   mutable sync_primitives::RecursiveLock state_lock_;
 
+  RequestState current_state_;
+
  private:
   DISALLOW_COPY_AND_ASSIGN(CommandRequestImpl);
+
+  /**
+   * @brief Changes request state to "kProcessEvent", retain request instance
+   * @return false if request is already in timeout state.
+   * If request is succesfully retained returns true/
+   */
+  bool StartOnEventHandling();
+
+  /**
+   * @brief Changes request state to "kAwaitingResponse", removes request
+   * instance retained before
+   */
+  void FinalizeOnEventHandling();
 };
 
 }  // namespace commands
