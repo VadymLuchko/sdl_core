@@ -318,6 +318,15 @@ void ProtocolHandlerImpl::SendStartSessionAck(
 
       SDL_LOG_INFO("Protocol Version String " << protocol_version_string);
 
+      char hardware_version_hardcoded[500] = "123.456.789 - ACK";
+      const bool system_version_added = bson_object_put_string(
+          &params, "systemHardwareVersion", hardware_version_hardcoded);
+      UNUSED(system_version_added);
+      SDL_LOG_DEBUG(
+          "Hardware version parameter was written to bson params: "
+          << system_version_added << "; Value: "
+          << bson_object_get_string(&params, "systemHardwareVersion"));
+
       std::vector<std::string> secondaryTransports;
       std::vector<int32_t> audioServiceTransports;
       std::vector<int32_t> videoServiceTransports;

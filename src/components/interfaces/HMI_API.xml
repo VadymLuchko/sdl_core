@@ -3196,6 +3196,10 @@
     <description>Trim of the vehicle</description>
     <description>e.g. SE</description>
   </param>
+  <param name="systemHardwareVersion" type="String" maxlength="500" mandatory="false">
+    <description>Hardware version of the vehicle</description>
+    <description>e.g. 001.123.4354</description>
+  </param>
 </struct>
 
 <!--IVI part-->

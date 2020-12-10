@@ -1058,7 +1058,8 @@
             "make": "SDL",
             "model": "Generic",
             "modelYear": "2019",
-            "trim": "SE"
+            "trim": "SE",
+            "systemHardwareVersion": "123.456.789 - CAPS"
         }
     },
     "SyncMessageVersion": {
