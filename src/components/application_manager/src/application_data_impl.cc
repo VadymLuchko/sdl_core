@@ -583,97 +583,100 @@ void DynamicApplicationDataImpl::set_display_layout(const std::string& layout) {
 }
 
 /**
- * @brief RemoveUnsupportedLayouts removes unsupported layouts from
- * configurable_keys array, if present
- * @param keyboard_capabilities Modified keyboard capabilities
- * @param supported_layouts Set with all supported layouts, generated from
- * supported_keyboard_layouts array
- * @param customizable_layouts Set with all supported layouts, which keys may be
- * customized (if not, number of keys for such layout will be set to zero by
- * default)
- */
-void RemoveUnsupportedLayouts(
-    smart_objects::SmartObject& keyboard_capabilities,
-    const std::set<mobile_apis::KeyboardLayout::eType>& supported_layouts,
-    std::set<mobile_apis::KeyboardLayout::eType>& customizable_layouts) {
-  SDL_LOG_AUTO_TRACE();
-
-  if (!keyboard_capabilities.keyExists(hmi_response::configurable_keys)) {
-    SDL_LOG_WARN(
-        "No configurable keys param in received keyboard capabilities");
-    return;
-  }
-
-  auto configurable_keyboards =
-      keyboard_capabilities[hmi_response::configurable_keys].asArray();
-  if (!configurable_keyboards) {
-    SDL_LOG_WARN("Pointer to configurable_keyboards array is null");
-    return;
-  }
-
-  for (auto keyboard = (*configurable_keyboards).begin();
-       keyboard != (*configurable_keyboards).end();) {
-    auto found_layout =
-        supported_layouts.find(static_cast<mobile_apis::KeyboardLayout::eType>(
-            (*keyboard)[hmi_request::keyboard_layout].asInt()));
-    if (supported_layouts.end() == found_layout) {
-      (*configurable_keyboards).erase(keyboard);
-    } else {
-      customizable_layouts.insert(
-          static_cast<mobile_apis::KeyboardLayout::eType>(
-              (*keyboard)[hmi_request::keyboard_layout].asInt()));
-      ++keyboard;
-    }
-  }
-}
-
-/**
- * @brief AddMissedSupportedLayouts adds missed supported layouts to
- * configurable_keys array, if present. If configurable_keys param is absent, it
- * will be created with all supported layouts and default number of keys (zero).
- * @param keyboard_capabilities Modified keyboard capabilities
- * @param supported_layouts Set with all supported layouts, generated from
- * supported_keyboard_layouts array
- * @param customizable_layouts Set with all supported layouts, which keys may be
- * customized (if not, number of keys for such layout will be set to zero by
- * default)
- */
-void AddMissedSupportedLayouts(
-    smart_objects::SmartObject& keyboard_capabilities,
-    const std::set<mobile_apis::KeyboardLayout::eType>& supported_layouts,
-    const std::set<mobile_apis::KeyboardLayout::eType>& customizable_layouts) {
-  for (auto layout : supported_layouts) {
-    auto found_layout = customizable_layouts.find(layout);
-
-    if (customizable_layouts.end() == found_layout) {
-      smart_objects::SmartObject missed_capabilities(
-          smart_objects::SmartType_Map);
-      missed_capabilities[hmi_response::num_configurable_keys] = 0;
-      missed_capabilities[hmi_request::keyboard_layout] = layout;
-
-      if (!keyboard_capabilities.keyExists(hmi_response::configurable_keys)) {
-        auto missed_keyboards =
-            smart_objects::SmartObject(smart_objects::SmartType_Array);
-        missed_keyboards[0] = missed_capabilities;
-        keyboard_capabilities[hmi_response::configurable_keys] =
-            missed_keyboards;
-      } else {
-        auto keys_array =
-            keyboard_capabilities[hmi_response::configurable_keys].asArray();
-        keys_array->push_back(missed_capabilities);
-      }
-    }
-  }
-}
-
-/**
- * @brief ValidateKeyboardCapabilities aligns content of
+ * @brief AlignKeyboardLayouts aligns content of
  * supported_keyboard_layouts param with content of configurable_keys param.
- * @param keyboard_capabilities Validated keyboard capabilities
+ * @param keyboard_capabilities Aligned keyboard capabilities
  */
-void ValidateKeyboardCapabilities(
-    smart_objects::SmartObject& keyboard_capabilities) {
+void AlignKeyboardLayouts(smart_objects::SmartObject& keyboard_capabilities) {
   SDL_LOG_AUTO_TRACE();
+
+  auto remove_unsupported_layouts =
+      [](smart_objects::SmartObject& keyboard_capabilities,
+         const std::set<mobile_apis::KeyboardLayout::eType>&
+             supported_layouts) {
+        if (!keyboard_capabilities.keyExists(hmi_response::configurable_keys)) {
+          SDL_LOG_WARN(
+              "No configurable keys param in received keyboard capabilities");
+          return;
+        }
+
+        auto configurable_keyboards =
+            keyboard_capabilities[hmi_response::configurable_keys].asArray();
+        if (!configurable_keyboards) {
+          SDL_LOG_WARN("Pointer to configurable_keyboards array is null");
+          return;
+        }
+
+        for (auto keyboard = (*configurable_keyboards).begin();
+             keyboard != (*configurable_keyboards).end();) {
+          auto found_layout = supported_layouts.find(
+              static_cast<mobile_apis::KeyboardLayout::eType>(
+                  (*keyboard)[hmi_request::keyboard_layout].asInt()));
+          if (supported_layouts.end() == found_layout) {
+            keyboard = (*configurable_keyboards).erase(keyboard);
+          } else {
+            ++keyboard;
+          }
+        }
+      };
+
+  auto fill_customizable_layouts_set =
+      [](const smart_objects::SmartObject& keyboard_capabilities,
+         std::set<mobile_apis::KeyboardLayout::eType>& customizable_layouts) {
+        if (!keyboard_capabilities.keyExists(hmi_response::configurable_keys)) {
+          SDL_LOG_WARN(
+              "No configurable keys param in received keyboard capabilities");
+          return;
+        }
+
+        auto configurable_keyboards =
+            keyboard_capabilities[hmi_response::configurable_keys].asArray();
+        if (!configurable_keyboards) {
+          SDL_LOG_WARN("Pointer to configurable_keyboards array is null");
+          return;
+        }
+
+        std::transform(
+            (*configurable_keyboards).begin(),
+            (*configurable_keyboards).end(),
+            std::inserter(customizable_layouts, customizable_layouts.end()),
+            [](const smart_objects::SmartObject& supported_keyboard) {
+              return static_cast<mobile_apis::KeyboardLayout::eType>(
+                  supported_keyboard[hmi_request::keyboard_layout].asInt());
+            });
+      };
+
+  auto add_missing_keyboard_layouts =
+      [](smart_objects::SmartObject& keyboard_capabilities,
+         const std::set<mobile_apis::KeyboardLayout::eType>& supported_layouts,
+         const std::set<mobile_apis::KeyboardLayout::eType>&
+             customizable_layouts) {
+        for (auto layout : supported_layouts) {
+          auto found_layout = customizable_layouts.find(layout);
+
+          if (customizable_layouts.end() == found_layout) {
+            smart_objects::SmartObject default_capabilities(
+                smart_objects::SmartType_Map);
+            default_capabilities[hmi_response::num_configurable_keys] = 0;
+            default_capabilities[hmi_request::keyboard_layout] = layout;
+
+            if (!keyboard_capabilities.keyExists(
+                    hmi_response::configurable_keys)) {
+              auto missed_keyboards =
+                  smart_objects::SmartObject(smart_objects::SmartType_Array);
+              missed_keyboards[0] = default_capabilities;
+              keyboard_capabilities[hmi_response::configurable_keys] =
+                  missed_keyboards;
+            } else {
+              auto keys_array =
+                  keyboard_capabilities[hmi_response::configurable_keys]
+                      .asArray();
+              keys_array->push_back(default_capabilities);
+            }
+          }
+        }
+      };
+
   if (!keyboard_capabilities.keyExists(
           hmi_response::supported_keyboard_layouts)) {
     SDL_LOG_WARN("Supported keyboard layouts not available");
@@ -683,18 +686,27 @@ void ValidateKeyboardCapabilities(
   std::set<mobile_apis::KeyboardLayout::eType> supported_layouts;
   auto supported_layouts_array =
       keyboard_capabilities[hmi_response::supported_keyboard_layouts].asArray();
-  if (supported_layouts_array) {
-    for (auto layout : (*supported_layouts_array)) {
-      supported_layouts.insert(
-          static_cast<mobile_apis::KeyboardLayout::eType>(layout.asInt()));
-    }
+
+  if (!supported_layouts_array) {
+    SDL_LOG_WARN("Pointer to supported_keyboard_layouts array is null");
+    return;
   }
 
-  std::set<mobile_apis::KeyboardLayout::eType> customizable_layouts;
-  RemoveUnsupportedLayouts(
-      keyboard_capabilities, supported_layouts, customizable_layouts);
+  std::transform((*supported_layouts_array).begin(),
+                 (*supported_layouts_array).end(),
+                 std::inserter(supported_layouts, supported_layouts.end()),
+                 [](const smart_objects::SmartObject& supported_layout) {
+                   return static_cast<mobile_apis::KeyboardLayout::eType>(
+                       supported_layout.asInt());
+                 });
 
-  AddMissedSupportedLayouts(
+  remove_unsupported_layouts(keyboard_capabilities, supported_layouts);
+
+  std::set<mobile_apis::KeyboardLayout::eType> customizable_layouts;
+
+  fill_customizable_layouts_set(keyboard_capabilities, customizable_layouts);
+
+  add_missing_keyboard_layouts(
       keyboard_capabilities, supported_layouts, customizable_layouts);
 }
 
@@ -749,13 +761,13 @@ void DynamicApplicationDataImpl::set_display_capabilities(
 
   if (tmp_window_capabilities[0].keyExists(
           hmi_response::keyboard_capabilities)) {
-    auto& validated_keyboard_capabilities =
+    auto& aligned_keyboard_capabilities =
         tmp_window_capabilities[0][hmi_response::keyboard_capabilities];
 
-    ValidateKeyboardCapabilities(validated_keyboard_capabilities);
+    AlignKeyboardLayouts(aligned_keyboard_capabilities);
     for (uint32_t i = 0; i < tmp_window_capabilities.length(); ++i) {
       tmp_window_capabilities[i][hmi_response::keyboard_capabilities] =
-          validated_keyboard_capabilities;
+          aligned_keyboard_capabilities;
     }
   }
 
