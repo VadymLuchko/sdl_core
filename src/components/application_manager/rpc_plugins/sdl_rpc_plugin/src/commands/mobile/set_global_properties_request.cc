@@ -839,8 +839,7 @@ bool SetGlobalPropertiesRequest::IsWhiteSpaceExist() {
               .asArray();
 
       for (auto keys : (*custom_keys_array)) {
-        str = keys.asCharArray();
-        if (!CheckSyntax(str)) {
+        if (!CheckSyntax(keys.asCharArray())) {
           SDL_LOG_ERROR(
               "Invalid keyboard_properties "
               "customize_keys syntax check failed");
@@ -914,7 +913,7 @@ uint32_t SetGlobalPropertiesRequest::GetAllowedNumberOfConfigurableKeys()
                             [hmi_response::configurable_keys]
                                 .asArray();
 
-  hmi_apis::Common_KeyboardLayout::eType requested_layout = GetKeyboardLayout();
+  const auto requested_layout = GetKeyboardLayout();
   for (auto keyboard : (*configurable_keyboards)) {
     if (requested_layout ==
         static_cast<hmi_apis::Common_KeyboardLayout::eType>(
