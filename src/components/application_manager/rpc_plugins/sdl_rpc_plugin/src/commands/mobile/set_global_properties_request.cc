@@ -653,7 +653,18 @@ void SetGlobalPropertiesRequest::PrepareUIRequestMenuAndKeyboardData(
   if (is_keyboard_props_present) {
     out_params[hmi_request::keyboard_properties] =
         msg_params[hmi_request::keyboard_properties];
-    app->set_keyboard_props(msg_params[hmi_request::keyboard_properties]);
+
+    auto saved_keyboard_props = app->keyboard_props();
+    if (saved_keyboard_props) {
+      if (saved_keyboard_props->keyExists(hmi_request::keyboard_layout)) {
+        out_params[hmi_request::keyboard_properties]
+                  [hmi_request::keyboard_layout] =
+                      static_cast<hmi_apis::Common_KeyboardLayout::eType>(
+                          (*saved_keyboard_props)[hmi_request::keyboard_layout]
+                              .asInt());
+      }
+    }
+    app->set_keyboard_props(out_params[hmi_request::keyboard_properties]);
   }
 }
 
