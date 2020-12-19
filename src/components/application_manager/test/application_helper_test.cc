@@ -69,6 +69,7 @@ namespace application_manager_test {
 using resumption_test::MockLastState;
 using test::components::media_manager_test::MockMediaManager;
 using testing::_;
+using ::testing::AtLeast;
 using ::testing::Mock;
 using ::testing::NiceMock;
 using ::testing::Return;
@@ -210,10 +211,12 @@ TEST_F(ApplicationHelperTest, RecallApplicationData_ExpectAppDataReset) {
   EXPECT_TRUE(file_ptr->file_name == filename);
 
   EXPECT_CALL(*mock_message_helper_, CreateDeleteUICommandRequest(_, _, _))
-      .WillOnce(Return(std::make_shared<smart_objects::SmartObject>()));
+      .Times(AtLeast(1))
+      .WillRepeatedly(Return(std::make_shared<smart_objects::SmartObject>()));
 
   EXPECT_CALL(*mock_message_helper_, CreateDeleteVRCommandRequest(_, _, _))
-      .WillOnce(Return(std::make_shared<smart_objects::SmartObject>()));
+      .Times(AtLeast(1))
+      .WillRepeatedly(Return(std::make_shared<smart_objects::SmartObject>()));
 
   // Act
   application_manager::DeleteApplicationData(app_impl_, app_manager_impl_);
