@@ -970,6 +970,11 @@ void RegisterAppInterfaceRequest::SendRegisterAppInterfaceResponseToMobile(
     response_params[strings::system_software_version] = ccpu_version;
   }
 
+  const std::string hardware_version = hmi_capabilities_.hardware_version();
+  if (!hardware_version.empty()) {
+    response_params[strings::system_hardware_version] = hardware_version;
+  }
+
   if (ApplicationType::kSwitchedApplicationWrongHashId == app_type) {
     SDL_LOG_DEBUG(
         "Application has been switched from another transport, "
