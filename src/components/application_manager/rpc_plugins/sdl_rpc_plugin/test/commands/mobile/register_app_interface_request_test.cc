@@ -209,6 +209,8 @@ class RegisterAppInterfaceRequestTest
         .WillByDefault(ReturnRef(kDummyString));
     ON_CALL(mock_hmi_capabilities_, ccpu_version())
         .WillByDefault(ReturnRef(kDummyString));
+    ON_CALL(mock_hmi_capabilities_, hardware_version())
+        .WillByDefault(ReturnRef(kDummyString));
     ON_CALL(mock_hmi_capabilities_, speech_capabilities())
         .WillByDefault(Return(smart_objects::SmartObjectSPtr()));
     ON_CALL(mock_hmi_capabilities_, prerecorded_speech())
