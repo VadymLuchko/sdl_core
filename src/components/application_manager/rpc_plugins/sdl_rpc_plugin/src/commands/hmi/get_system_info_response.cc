@@ -73,6 +73,9 @@ void GetSystemInfoResponse::Run() {
       info.ccpu_version, info.wers_country_code, info.language);
 
   hmi_capabilities_.OnSoftwareVersionReceived(info.ccpu_version);
+  if (!info.hardware_version.empty()) {
+    hmi_capabilities_.set_hardware_version(info.hardware_version);
+  }
 }
 
 const SystemInfo GetSystemInfoResponse::GetSystemInfo() const {
@@ -89,6 +92,12 @@ const SystemInfo GetSystemInfoResponse::GetSystemInfo() const {
   info.language = application_manager::EnumToString(
       static_cast<hmi_apis::Common_Language::eType>(lang_code));
 
+  if ((*message_)[strings::msg_params].keyExists(
+          strings::system_hardware_version)) {
+    info.hardware_version =
+        (*message_)[strings::msg_params][strings::system_hardware_version]
+            .asString();
+  }
   return info;
 }
 

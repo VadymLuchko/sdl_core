@@ -68,6 +68,7 @@ typedef NiceMock<
 namespace {
 const uint32_t kConnectionKey = 2u;
 const std::string ccpu_version("4.1.3.B_EB355B");
+const std::string kHardwareVersion("1.1.1.1");
 const std::string wers_country_code("WAEGB");
 const std::string lang_code("EN-US");
 }  // namespace
@@ -129,6 +130,40 @@ TEST_F(GetSystemInfoResponseTest, GetSystemInfo_UpdateCapabilities_Called) {
   ResponseFromHMIPtr command(CreateCommand<GetSystemInfoResponse>(command_msg));
 
   EXPECT_CALL(mock_hmi_capabilities_, OnSoftwareVersionReceived(ccpu_version));
+
+  ASSERT_TRUE(command->Init());
+  command->Run();
+}
+
+TEST_F(GetSystemInfoResponseTest,
+       GetSystemInfo_SaveHardwareVersionToHMICapabilitiesIfPresent) {
+  MessageSharedPtr command_msg = CreateCommandMsg();
+  (*command_msg)[strings::params][hmi_response::code] =
+      hmi_apis::Common_Result::SUCCESS;
+  (*command_msg)[strings::msg_params][hmi_response::capabilities] =
+      (capabilities_);
+  (*command_msg)[strings::msg_params][strings::system_hardware_version] =
+      kHardwareVersion;
+
+  ResponseFromHMIPtr command(CreateCommand<GetSystemInfoResponse>(command_msg));
+
+  EXPECT_CALL(mock_hmi_capabilities_, set_hardware_version(kHardwareVersion));
+
+  ASSERT_TRUE(command->Init());
+  command->Run();
+}
+
+TEST_F(GetSystemInfoResponseTest,
+       GetSystemInfo_DontSaveHardwareVersionToHMICapabilitiesIfAbsent) {
+  MessageSharedPtr command_msg = CreateCommandMsg();
+  (*command_msg)[strings::params][hmi_response::code] =
+      hmi_apis::Common_Result::SUCCESS;
+  (*command_msg)[strings::msg_params][hmi_response::capabilities] =
+      (capabilities_);
+
+  ResponseFromHMIPtr command(CreateCommand<GetSystemInfoResponse>(command_msg));
+
+  EXPECT_CALL(mock_hmi_capabilities_, set_hardware_version(_)).Times(0);
 
   ASSERT_TRUE(command->Init());
   command->Run();
