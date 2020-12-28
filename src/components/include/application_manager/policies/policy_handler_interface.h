@@ -327,15 +327,33 @@ class PolicyHandlerInterface : public VehicleDataItemProvider {
    * @param wers_country_code WERS country code
    * @param language System language
    */
+  DEPRECATED virtual void OnGetSystemInfo(const std::string& ccpu_version,
+                                          const std::string& wers_country_code,
+                                          const std::string& language) = 0;
+
+  /**
+   * @brief Save data from GetSystemInfo request to policy table
+   * @param ccpu_version CCPU version
+   * @param wers_country_code WERS country code
+   * @param language System language
+   * @param hardware_version Hardware version
+   */
   virtual void OnGetSystemInfo(const std::string& ccpu_version,
                                const std::string& wers_country_code,
-                               const std::string& language) = 0;
+                               const std::string& language,
+                               const std::string& hardware_version) = 0;
 
   /**
    * @brief Get information about last ccpu_version from PT
    * @return ccpu_version from PT
    */
   virtual std::string GetCCPUVersionFromPT() const = 0;
+
+  /**
+   * @brief Get information about last hardware version from PT
+   * @return hardware version from PT
+   */
+  virtual std::string GetHardwareVersionFromPT() const = 0;
 
   /**
    * @brief Sends GetVehicleData request in case when Vechicle info is ready.

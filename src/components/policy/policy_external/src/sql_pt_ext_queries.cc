@@ -174,20 +174,22 @@ const std::string kSelectModuleMeta = "SELECT* FROM `module_meta`";
 
 const std::string kUpdateMetaParams =
     "UPDATE `module_meta` SET "
-    "`ccpu_version` = ?, `wers_country_code` = ?, `language` = ? ";
+    "`ccpu_version` = ?, `wers_country_code` = ?, `language` = ?, "
+    "`hardware_version` = ?";
 
 const std::string kUpdateModuleMetaVinParam =
     "UPDATE `module_meta` SET `vin` = ? ";
 
 const std::string kSaveModuleMeta =
     "UPDATE `module_meta` SET `ccpu_version` = ?, `language` = ?,"
-    "`wers_country_code` = ?, `pt_exchanged_at_odometer_x` = ?,"
+    "`wers_country_code` = ?, `hardware_version` = ?, "
+    "`pt_exchanged_at_odometer_x` = ?,"
     "`pt_exchanged_x_days_after_epoch` = ?,"
     "`ignition_cycles_since_last_exchange` = ?, `vin` = ?";
 
 const std::string kSelectMetaParams =
     "SELECT `ccpu_version`, "
-    "`wers_country_code`, `language` from `module_meta`";
+    "`wers_country_code`, `language`, `hardware_version` from `module_meta`";
 
 const std::string kUpdateMetaLanguage =
     "UPDATE `module_meta` SET `language` = ? ";

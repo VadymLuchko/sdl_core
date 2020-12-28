@@ -600,6 +600,29 @@ bool SQLPTExtRepresentation::SetMetaInfo(const std::string& ccpu_version,
   return true;
 }
 
+bool SQLPTExtRepresentation::SetMetaInfo(const std::string& ccpu_version,
+                                         const std::string& wers_country_code,
+                                         const std::string& language,
+                                         const std::string& hardware_version) {
+  SDL_LOG_AUTO_TRACE();
+  utils::dbms::SQLQuery query(db());
+  if (!query.Prepare(sql_pt_ext::kUpdateMetaParams)) {
+    SDL_LOG_WARN("Incorrect statement for insert to module meta.");
+    return false;
+  }
+
+  query.Bind(0, ccpu_version);
+  query.Bind(1, wers_country_code);
+  query.Bind(2, language);
+  query.Bind(3, hardware_version);
+
+  if (!query.Exec() || !query.Reset()) {
+    SDL_LOG_WARN("Incorrect insert to module meta.");
+    return false;
+  }
+  return true;
+}
+
 bool SQLPTExtRepresentation::IsMetaInfoPresent() {
   SDL_LOG_AUTO_TRACE();
   utils::dbms::SQLQuery query(db());

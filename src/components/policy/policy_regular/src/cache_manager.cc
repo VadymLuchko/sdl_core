@@ -1336,7 +1336,9 @@ void CacheManager::PersistData() {
         is_revoked = false;
       }
 
-      backup_->SetMetaInfo(*(*copy_pt.policy_table.module_meta).ccpu_version);
+      backup_->SetMetaInfo(
+          *(*copy_pt.policy_table.module_meta).ccpu_version,
+          *(*copy_pt.policy_table.module_meta).hardware_version);
 
       // In case of extended policy the meta info should be backuped as well.
       backup_->WriteDb();
@@ -1490,11 +1492,40 @@ bool CacheManager::SetMetaInfo(const std::string& ccpu_version,
   return true;
 }
 
+bool CacheManager::SetMetaInfo(const std::string& ccpu_version,
+                               const std::string& wers_country_code,
+                               const std::string& language,
+                               const std::string& hardware_version) {
+  CACHE_MANAGER_CHECK(false);
+  sync_primitives::AutoLock auto_lock(cache_lock_);
+  rpc::Optional<policy_table::ModuleMeta>& module_meta =
+      pt_->policy_table.module_meta;
+  *(module_meta->ccpu_version) = ccpu_version;
+  *(module_meta->hardware_version) = hardware_version;
+  // We have to set preloaded flag as false in policy table on any response
+  // of GetSystemInfo (SDLAQ-CRS-2365)
+  *(pt_->policy_table.module_config.preloaded_pt) = false;
+  Backup();
+  return true;
+}
+
 std::string CacheManager::GetCCPUVersionFromPT() const {
   SDL_LOG_AUTO_TRACE();
   rpc::Optional<policy_table::ModuleMeta>& module_meta =
       pt_->policy_table.module_meta;
   return *(module_meta->ccpu_version);
+}
+
+std::string CacheManager::GetHardwareVersionFromPT() const {
+  SDL_LOG_AUTO_TRACE();
+  rpc::Optional<policy_table::ModuleMeta>& module_meta =
+      pt_->policy_table.module_meta;
+
+  if (!module_meta->hardware_version) {
+    return std::string();
+  }
+
+  return *(module_meta->hardware_version);
 }
 
 bool CacheManager::IsMetaInfoPresent() const {

@@ -716,6 +716,25 @@ bool SQLPTRepresentation::SetMetaInfo(const std::string& ccpu_version) {
   return true;
 }
 
+bool SQLPTRepresentation::SetMetaInfo(const std::string& ccpu_version,
+                                      const std::string& hardware_version) {
+  SDL_LOG_AUTO_TRACE();
+  utils::dbms::SQLQuery query(db());
+  if (!query.Prepare(sql_pt::kUpdateMetaParams)) {
+    SDL_LOG_WARN("Incorrect statement for insert to module meta.");
+    return false;
+  }
+
+  query.Bind(0, ccpu_version);
+  query.Bind(1, hardware_version);
+
+  if (!query.Exec() || !query.Reset()) {
+    SDL_LOG_WARN("Incorrect insert to module meta.");
+    return false;
+  }
+  return true;
+}
+
 bool SQLPTRepresentation::GatherApplicationPoliciesSection(
     policy_table::ApplicationPoliciesSection* policies) const {
   SDL_LOG_INFO("Gather applications policies");

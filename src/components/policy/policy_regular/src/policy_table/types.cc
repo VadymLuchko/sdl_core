@@ -1297,7 +1297,8 @@ ModuleMeta::ModuleMeta(const Json::Value* value__)
           impl::ValueMember(value__, "pt_exchanged_x_days_after_epoch"))
     , ignition_cycles_since_last_exchange(
           impl::ValueMember(value__, "ignition_cycles_since_last_exchange"))
-    , ccpu_version(impl::ValueMember(value__, "ccpu_version")) {}
+    , ccpu_version(impl::ValueMember(value__, "ccpu_version"))
+    , hardware_version(impl::ValueMember(value__, "hardware_version")) {}
 
 Json::Value ModuleMeta::ToJsonValue() const {
   Json::Value result__(Json::objectValue);

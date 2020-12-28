@@ -548,15 +548,26 @@ class CacheManager : public CacheManagerInterface {
    * @brief Records information about head unit system to PT
    * @return bool Success of operation
    */
+  DEPRECATED bool SetMetaInfo(const std::string& ccpu_version,
+                              const std::string& wers_country_code,
+                              const std::string& language);
+
   bool SetMetaInfo(const std::string& ccpu_version,
                    const std::string& wers_country_code,
-                   const std::string& language);
+                   const std::string& language,
+                   const std::string& hardware_version);
 
   /**
    * @brief Get information about last ccpu_version from PT
    * @return ccpu_version from PT
    */
   std::string GetCCPUVersionFromPT() const;
+
+  /**
+   * @brief Get information about last hardware version from PT
+   * @return string representation of hardware version from PT, empty if absent
+   */
+  std::string GetHardwareVersionFromPT() const;
 
   /**
    * @brief Checks, if specific head unit is present in PT

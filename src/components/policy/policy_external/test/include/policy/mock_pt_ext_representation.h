@@ -105,6 +105,11 @@ class MockPTExtRepresentation : public MockPTRepresentation,
                bool(const std::string& ccpu_version,
                     const std::string& wers_country_code,
                     const std::string& vin));
+  MOCK_METHOD4(SetMetaInfo,
+               bool(const std::string& ccpu_version,
+                    const std::string& wers_country_code,
+                    const std::string& language,
+                    const std::string& hardware_version));
   MOCK_METHOD0(IsMetaInfoPresent, bool());
   MOCK_METHOD1(SetSystemLanguage, bool(const std::string& language));
   MOCK_METHOD0(GetKmFromSuccessfulExchange, int());

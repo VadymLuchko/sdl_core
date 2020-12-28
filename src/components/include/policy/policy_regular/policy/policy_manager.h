@@ -419,15 +419,33 @@ class PolicyManager : public usage_statistics::StatisticsManager,
    * @param wers_country_code WERS country code
    * @param language System language
    */
+  DEPRECATED virtual void SetSystemInfo(const std::string& ccpu_version,
+                                        const std::string& wers_country_code,
+                                        const std::string& language) = 0;
+
+  /**
+   * @brief Set data from GetSystemInfo response to policy table
+   * @param ccpu_version CCPU version
+   * @param wers_country_code WERS country code
+   * @param language System language
+   * @param hardware_version Hardware version
+   */
   virtual void SetSystemInfo(const std::string& ccpu_version,
                              const std::string& wers_country_code,
-                             const std::string& language) = 0;
+                             const std::string& language,
+                             const std::string& hardware_version) = 0;
 
   /**
    * @brief Get information about last ccpu_version from PT
    * @return ccpu_version from PT
    */
   virtual std::string GetCCPUVersionFromPT() const = 0;
+
+  /**
+   * @brief Get information about last hardware version from PT
+   * @return hardware version from PT
+   */
+  virtual std::string GetHardwareVersionFromPT() const = 0;
 
   /**
    * @brief Send OnPermissionsUpdated for choosen application

@@ -1217,9 +1217,23 @@ void PolicyManagerImpl::SetSystemInfo(const std::string& ccpu_version,
   cache_->SetMetaInfo(ccpu_version, wers_country_code, language);
 }
 
+void PolicyManagerImpl::SetSystemInfo(const std::string& ccpu_version,
+                                      const std::string& wers_country_code,
+                                      const std::string& language,
+                                      const std::string& hardware_version) {
+  SDL_LOG_AUTO_TRACE();
+  cache_->SetMetaInfo(
+      ccpu_version, wers_country_code, language, hardware_version);
+}
+
 std::string PolicyManagerImpl::GetCCPUVersionFromPT() const {
   SDL_LOG_AUTO_TRACE();
   return cache_->GetCCPUVersionFromPT();
+}
+
+std::string PolicyManagerImpl::GetHardwareVersionFromPT() const {
+  SDL_LOG_AUTO_TRACE();
+  return cache_->GetHardwareVersionFromPT();
 }
 
 uint32_t PolicyManagerImpl::GetNotificationsNumber(const std::string& priority,

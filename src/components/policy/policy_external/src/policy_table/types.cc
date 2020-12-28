@@ -1424,6 +1424,7 @@ ModuleMeta::ModuleMeta(const Json::Value* value__)
     , ccpu_version(impl::ValueMember(value__, "ccpu_version"))
     , language(impl::ValueMember(value__, "language"))
     , wers_country_code(impl::ValueMember(value__, "wers_country_code"))
+    , hardware_version(impl::ValueMember(value__, "hardware_version"))
     , pt_exchanged_at_odometer_x(
           impl::ValueMember(value__, "pt_exchanged_at_odometer_x"))
     , pt_exchanged_x_days_after_epoch(
@@ -1437,6 +1438,7 @@ Json::Value ModuleMeta::ToJsonValue() const {
   impl::WriteJsonField("ccpu_version", ccpu_version, &result__);
   impl::WriteJsonField("language", language, &result__);
   impl::WriteJsonField("wers_country_code", wers_country_code, &result__);
+  impl::WriteJsonField("hardware_version", hardware_version, &result__);
   impl::WriteJsonField(
       "pt_exchanged_at_odometer_x", pt_exchanged_at_odometer_x, &result__);
   impl::WriteJsonField("pt_exchanged_x_days_after_epoch",
@@ -1551,6 +1553,7 @@ void ModuleMeta::SetPolicyTableType(PolicyTableType pt_type) {
   ccpu_version.SetPolicyTableType(pt_type);
   language.SetPolicyTableType(pt_type);
   wers_country_code.SetPolicyTableType(pt_type);
+  hardware_version.SetPolicyTableType(pt_type);
   pt_exchanged_at_odometer_x.SetPolicyTableType(pt_type);
   pt_exchanged_x_days_after_epoch.SetPolicyTableType(pt_type);
   ignition_cycles_since_last_exchange.SetPolicyTableType(pt_type);

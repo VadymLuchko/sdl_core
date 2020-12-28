@@ -92,9 +92,14 @@ class SQLPTExtRepresentation : public SQLPTRepresentation,
     return true;
   }
 
+  DEPRECATED bool SetMetaInfo(const std::string& ccpu_version,
+                              const std::string& wers_country_code,
+                              const std::string& language);
+
   bool SetMetaInfo(const std::string& ccpu_version,
                    const std::string& wers_country_code,
-                   const std::string& language);
+                   const std::string& language,
+                   const std::string& hardware_version) OVERRIDE;
 
   bool IsMetaInfoPresent();
 

@@ -382,13 +382,27 @@ class PolicyHandler : public PolicyHandlerInterface,
    * @param wers_country_code WERS country code
    * @param language System language
    */
+  DEPRECATED void OnGetSystemInfo(const std::string& ccpu_version,
+                                  const std::string& wers_country_code,
+                                  const std::string& language) OVERRIDE;
+
+  /**
+   * @brief Save data from GetSystemInfo request to policy table
+   * @param ccpu_version CCPU version
+   * @param wers_country_code WERS country code
+   * @param language System language
+   * @param hardware_version Hardware version
+   */
   void OnGetSystemInfo(const std::string& ccpu_version,
                        const std::string& wers_country_code,
-                       const std::string& language) OVERRIDE;
+                       const std::string& language,
+                       const std::string& hardware_version) OVERRIDE;
 
   void SetPreloadedPtFlag(const bool is_preloaded) OVERRIDE;
 
   std::string GetCCPUVersionFromPT() const OVERRIDE;
+
+  std::string GetHardwareVersionFromPT() const OVERRIDE;
 
   /**
    * @brief Sends GetVehicleData request in case when Vechicle info is ready.

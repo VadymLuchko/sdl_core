@@ -2045,7 +2045,8 @@ void CacheManager::PersistData() {
         ex_backup_->SetMetaInfo(
             *(*copy_pt.policy_table.module_meta).ccpu_version,
             *(*copy_pt.policy_table.module_meta).wers_country_code,
-            *(*copy_pt.policy_table.module_meta).language);
+            *(*copy_pt.policy_table.module_meta).language,
+            *(*copy_pt.policy_table.module_meta).hardware_version);
         ex_backup_->SetVINValue(*(*copy_pt.policy_table.module_meta).vin);
 
         // Save unpaired flag for devices
@@ -2300,11 +2301,43 @@ bool CacheManager::SetMetaInfo(const std::string& ccpu_version,
   return true;
 }
 
+bool CacheManager::SetMetaInfo(const std::string& ccpu_version,
+                               const std::string& wers_country_code,
+                               const std::string& language,
+                               const std::string& hardware_version) {
+  CACHE_MANAGER_CHECK(false);
+  sync_primitives::AutoLock auto_lock(cache_lock_);
+
+  *pt_->policy_table.module_meta->ccpu_version = ccpu_version;
+  *pt_->policy_table.module_meta->wers_country_code = wers_country_code;
+  *pt_->policy_table.module_meta->language = language;
+  *pt_->policy_table.module_meta->hardware_version = hardware_version;
+
+  // We have to set preloaded flag as false in policy table on any response
+  // of GetSystemInfo (SDLAQ-CRS-2365)
+  *pt_->policy_table.module_config.preloaded_pt = false;
+
+  Backup();
+  return true;
+}
+
 std::string CacheManager::GetCCPUVersionFromPT() const {
   SDL_LOG_AUTO_TRACE();
   rpc::Optional<policy_table::ModuleMeta>& module_meta =
       pt_->policy_table.module_meta;
   return *(module_meta->ccpu_version);
+}
+
+std::string CacheManager::GetHardwareVersionFromPT() const {
+  SDL_LOG_AUTO_TRACE();
+  rpc::Optional<policy_table::ModuleMeta>& module_meta =
+      pt_->policy_table.module_meta;
+
+  if (!module_meta) {
+    return std::string();
+  }
+
+  return *(module_meta->hardware_version);
 }
 
 bool CacheManager::IsMetaInfoPresent() const {
@@ -2883,6 +2916,7 @@ const MetaInfo CacheManager::GetMetaInfo() const {
   meta_info.wers_country_code =
       *pt_->policy_table.module_meta->wers_country_code;
   meta_info.language = *pt_->policy_table.module_meta->language;
+  meta_info.hardware_version = *pt_->policy_table.module_meta->hardware_version;
   return meta_info;
 }
 
