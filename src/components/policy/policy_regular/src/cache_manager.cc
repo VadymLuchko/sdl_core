@@ -1337,6 +1337,8 @@ void CacheManager::PersistData() {
       }
 
       backup_->SetMetaInfo(*(*copy_pt.policy_table.module_meta).ccpu_version);
+      ex_backup_->SetHardwareVersion(
+          *(*copy_pt.policy_table.module_meta).hardware_version);
 
       // In case of extended policy the meta info should be backuped as well.
       backup_->WriteDb();
@@ -1490,11 +1492,27 @@ bool CacheManager::SetMetaInfo(const std::string& ccpu_version,
   return true;
 }
 
+bool CacheManager::SetHardwareVersion(const std::string& hardware_version) {
+  CACHE_MANAGER_CHECK(false);
+  sync_primitives::AutoLock auto_lock(cache_lock_);
+
+  *pt_->policy_table.module_meta->hardware_version = hardware_version;
+  Backup();
+  return true;
+}
+
 std::string CacheManager::GetCCPUVersionFromPT() const {
   SDL_LOG_AUTO_TRACE();
   rpc::Optional<policy_table::ModuleMeta>& module_meta =
       pt_->policy_table.module_meta;
   return *(module_meta->ccpu_version);
+}
+
+std::string CacheManager::GetHardwareVersionFromPT() const {
+  SDL_LOG_AUTO_TRACE();
+  rpc::Optional<policy_table::ModuleMeta>& module_meta =
+      pt_->policy_table.module_meta;
+  return *(module_meta->hardware_version);
 }
 
 bool CacheManager::IsMetaInfoPresent() const {
