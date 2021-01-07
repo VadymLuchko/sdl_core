@@ -592,6 +592,7 @@ bool SQLPTExtRepresentation::SetMetaInfo(const std::string& ccpu_version,
   query.Bind(0, ccpu_version);
   query.Bind(1, wers_country_code);
   query.Bind(2, language);
+  query.Bind(3);
 
   if (!query.Exec() || !query.Reset()) {
     SDL_LOG_WARN("Incorrect insert to module meta.");
@@ -1341,12 +1342,13 @@ void SQLPTExtRepresentation::GatherModuleMeta(
   utils::dbms::SQLQuery query(db());
   if (query.Prepare(sql_pt_ext::kSelectModuleMeta) && query.Next()) {
     *meta->ccpu_version = query.GetString(0);
-    *meta->language = query.GetString(1);
-    *meta->wers_country_code = query.GetString(2);
-    *meta->pt_exchanged_at_odometer_x = query.GetInteger(3);
-    *meta->pt_exchanged_x_days_after_epoch = query.GetInteger(4);
-    *meta->ignition_cycles_since_last_exchange = query.GetInteger(5);
-    *meta->vin = query.GetString(6);
+    *meta->hardware_version = query.GetString(1);
+    *meta->language = query.GetString(2);
+    *meta->wers_country_code = query.GetString(3);
+    *meta->pt_exchanged_at_odometer_x = query.GetInteger(4);
+    *meta->pt_exchanged_x_days_after_epoch = query.GetInteger(5);
+    *meta->ignition_cycles_since_last_exchange = query.GetInteger(6);
+    *meta->vin = query.GetString(7);
   }
 }
 
@@ -1675,10 +1677,11 @@ bool SQLPTExtRepresentation::SaveModuleMeta(
   query.Bind(0, *(meta.ccpu_version));
   query.Bind(1, *(meta.language));
   query.Bind(2, *(meta.wers_country_code));
-  query.Bind(3, odometer);
-  query.Bind(4, *(meta.pt_exchanged_x_days_after_epoch));
-  query.Bind(5, *(meta.ignition_cycles_since_last_exchange));
-  query.Bind(6, *(meta.vin));
+  query.Bind(3, *(meta.hardware_version));
+  query.Bind(4, odometer);
+  query.Bind(5, *(meta.pt_exchanged_x_days_after_epoch));
+  query.Bind(6, *(meta.ignition_cycles_since_last_exchange));
+  query.Bind(7, *(meta.vin));
 
   if (!query.Exec()) {
     SDL_LOG_WARN("Incorrect update for module_meta.");

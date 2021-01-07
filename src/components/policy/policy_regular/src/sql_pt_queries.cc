@@ -1077,7 +1077,10 @@ const std::string kSaveModuleMeta =
     "`pt_exchanged_x_days_after_epoch` = ?, "
     "`ignition_cycles_since_last_exchange` = ? ";
 
-const std::string kSelectModuleMeta = "SELECT* FROM `module_meta`";
+const std::string kSelectModuleMeta =
+    "SELECT `ccpu_version`, `hardware_version`, `pt_exchanged_at_odometer_x`, "
+    "`pt_exchanged_x_days_after_epoch`, `ignition_cycles_since_last_exchange` "
+    "FROM `module_meta`";
 
 const std::string kUpdateMetaParams =
     "UPDATE `module_meta` SET "
