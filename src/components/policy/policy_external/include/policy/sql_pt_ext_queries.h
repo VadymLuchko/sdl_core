@@ -65,6 +65,7 @@ extern const std::string kInsertExternalConsentStatusGroups;
 extern const std::string kCountUnconsentedGroups;
 extern const std::string kSelectModuleMeta;
 extern const std::string kUpdateMetaParams;
+extern const std::string kUpdateMetaHardwareParam;
 extern const std::string kUpdateModuleMetaVinParam;
 extern const std::string kSaveModuleMeta;
 extern const std::string kSelectMetaParams;

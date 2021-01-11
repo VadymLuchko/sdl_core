@@ -96,6 +96,8 @@ class SQLPTExtRepresentation : public SQLPTRepresentation,
                    const std::string& wers_country_code,
                    const std::string& language);
 
+  bool SetHardwareVersion(const std::string& hardware_version);
+
   bool IsMetaInfoPresent();
 
   bool SetSystemLanguage(const std::string& language);
