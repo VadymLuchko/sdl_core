@@ -1188,10 +1188,9 @@ class ApplicationManagerImpl
 
  private:
   /**
-   * @brief Sets is_stopping flag
-   * @param new_value new value for is_stopping flag
+   * @brief Sets is_stopping flag to true
    */
-  void SetStopping(const bool new_value);
+  void InitiateStopping();
 
   /**
    * @brief Adds application to registered applications list and marks it as

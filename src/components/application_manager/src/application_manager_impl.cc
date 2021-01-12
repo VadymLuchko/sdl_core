@@ -230,7 +230,7 @@ ApplicationManagerImpl::ApplicationManagerImpl(
 ApplicationManagerImpl::~ApplicationManagerImpl() {
   SDL_LOG_AUTO_TRACE();
 
-  SetStopping(true);
+  InitiateStopping();
   SendOnSDLClose();
   media_manager_ = NULL;
   hmi_handler_ = NULL;
@@ -2599,7 +2599,7 @@ bool ApplicationManagerImpl::Init(
 
 bool ApplicationManagerImpl::Stop() {
   SDL_LOG_AUTO_TRACE();
-  SetStopping(true);
+  InitiateStopping();
   application_list_update_timer_.Stop();
   try {
     if (unregister_reason_ ==
@@ -3023,7 +3023,7 @@ void ApplicationManagerImpl::SetUnregisterAllApplicationsReason(
 void ApplicationManagerImpl::HeadUnitReset(
     mobile_api::AppInterfaceUnregisteredReason::eType reason) {
   SDL_LOG_AUTO_TRACE();
-  SetStopping(true);
+  InitiateStopping();
   switch (reason) {
     case mobile_api::AppInterfaceUnregisteredReason::MASTER_RESET: {
       SDL_LOG_TRACE("Performing MASTER_RESET");
@@ -4182,10 +4182,10 @@ void ApplicationManagerImpl::SetHMICooperating(const bool hmi_cooperating) {
   wait_for_hmi_condvar_.Broadcast();
 }
 
-void ApplicationManagerImpl::SetStopping(const bool new_value) {
+void ApplicationManagerImpl::InitiateStopping() {
   SDL_LOG_AUTO_TRACE();
   sync_primitives::AutoLock lock(wait_for_hmi_lock_);
-  is_stopping_.store(new_value);
+  is_stopping_.store(true);
   wait_for_hmi_condvar_.Broadcast();
 }
 
