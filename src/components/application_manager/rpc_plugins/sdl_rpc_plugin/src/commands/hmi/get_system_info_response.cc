@@ -74,11 +74,12 @@ void GetSystemInfoResponse::Run() {
   policy_handler_.OnGetSystemInfo(
       info.ccpu_version, info.wers_country_code, info.language);
 
-  hmi_capabilities_.OnSoftwareVersionReceived(info.ccpu_version);
   if (!info.hardware_version.empty()) {
     policy_handler_.OnHardwareVersionReceived(info.hardware_version);
     hmi_capabilities_.set_hardware_version(info.hardware_version);
   }
+
+  hmi_capabilities_.OnSoftwareVersionReceived(info.ccpu_version);
 }
 
 const SystemInfo GetSystemInfoResponse::GetSystemInfo() const {
