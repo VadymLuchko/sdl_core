@@ -86,7 +86,7 @@ void StreamerAdapter::StopActivity(int32_t application_key) {
   }
 
   DCHECK(streamer_);
-  streamer_->exitThreadMain();
+  thread_->Stop(threads::Thread::kThreadStopDelegate);
 
   for (std::set<MediaListenerPtr>::iterator it = media_listeners_.begin();
        media_listeners_.end() != it;
