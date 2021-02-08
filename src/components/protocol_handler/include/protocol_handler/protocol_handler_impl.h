@@ -375,12 +375,15 @@ class ProtocolHandlerImpl
    * \param protocol_version Version of protocol used for communication
    * \param service_type Type of session: RPC or BULK Data. RPC by default
    * \param reason String stating the reason for the rejecting the start service
+   * \param full_version full protocol version (major.minor.patch) used by the
+   *        mobile proxy
    */
   void SendStartSessionNAck(ConnectionID connection_id,
                             uint8_t session_id,
                             uint8_t protocol_version,
                             uint8_t service_type,
-                            const std::string& reason);
+                            const std::string& reason,
+                            const utils::SemanticVersion& full_version);
 
   /**
    * \brief Sends fail of starting session to mobile application
@@ -390,13 +393,16 @@ class ProtocolHandlerImpl
    * \param service_type Type of session: RPC or BULK Data. RPC by default
    * \param rejected_params List of rejected params to send in payload
    * \param reason String stating the reason for the rejecting the start service
+   * \param full_version full protocol version (major.minor.patch) used by the
+   *        mobile proxy
    */
   void SendStartSessionNAck(ConnectionID connection_id,
                             uint8_t session_id,
                             uint8_t protocol_version,
                             uint8_t service_type,
                             std::vector<std::string>& rejectedParams,
-                            const std::string& reason);
+                            const std::string& reason,
+                            const utils::SemanticVersion& full_version);
 
   /**
    * \brief Sends acknowledgement of end session/service to mobile application
@@ -732,6 +738,16 @@ class ProtocolHandlerImpl
       const ConnectionID connection_id,
       const uint8_t session_id,
       const bool protection) const;
+
+  /**
+   * \brief Parces full protocol version from start servise message headers bson
+   * \param full_version full protocol version (major.minor.patch) used by the
+   *        mobile proxy
+   * \param packet Sart servise message
+   * \return true if version successfully parsed, otherwise false
+   */
+  bool ParseFullVersion(utils::SemanticVersion& full_version,
+                        const ProtocolFramePtr& packet) const;
 
   const ProtocolHandlerSettings& settings_;
 
