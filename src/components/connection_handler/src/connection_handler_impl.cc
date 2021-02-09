@@ -547,10 +547,6 @@ void ConnectionHandlerImpl::OnSessionStartedCallback(
         session_key,
         service_type,
         params);
-  } else {
-    if (protocol_handler_) {
-      protocol_handler_->NotifySessionStarted(context, rejected_params);
-    }
   }
 }
 
@@ -589,17 +585,20 @@ void ConnectionHandlerImpl::NotifyServiceStartedResult(
 
   if (!result) {
     SDL_LOG_WARN("Service starting forbidden by connection_handler_observer");
+    context.is_start_session_failed_ = true;
+  }
+
+  if (protocol_handler_) {
+    protocol_handler_->NotifySessionStarted(context, rejected_params, reason);
+  }
+
+  if (context.is_start_session_failed_) {
     if (protocol_handler::kRpc == context.service_type_) {
       connection->RemoveSession(context.new_session_id_);
     } else {
       connection->RemoveService(context.initial_session_id_,
                                 context.service_type_);
     }
-    context.new_session_id_ = 0;
-  }
-
-  if (protocol_handler_ != NULL) {
-    protocol_handler_->NotifySessionStarted(context, rejected_params, reason);
   }
 }
 

@@ -1845,7 +1845,7 @@ bool ProtocolHandlerImpl::ParseFullVersion(
 }
 
 void ProtocolHandlerImpl::NotifySessionStarted(
-    const SessionContext& context,
+    SessionContext& context,
     std::vector<std::string>& rejected_params,
     const std::string err_reason) {
   SDL_LOG_AUTO_TRACE();
@@ -1884,7 +1884,7 @@ void ProtocolHandlerImpl::NotifySessionStarted(
     fullVersion = utils::SemanticVersion();
   }
 
-  if (0 == context.new_session_id_) {
+  if (context.is_start_session_failed_) {
     SDL_LOG_WARN("Refused by session_observer to create service "
                  << static_cast<int32_t>(service_type) << " type.");
     const auto session_id = packet->session_id();
@@ -1993,6 +1993,7 @@ void ProtocolHandlerImpl::NotifySessionStarted(
                            rejected_params,
                            "SSL Handshake failed due to rejected parameters",
                            fullVersion);
+      context.is_start_session_failed_ = true;
     } else if (ssl_context->IsInitCompleted()) {
       // mark service as protected
       session_observer_.SetProtectionFlag(connection_key, service_type);
@@ -2028,6 +2029,7 @@ void ProtocolHandlerImpl::NotifySessionStarted(
                                rejected_params,
                                "System time provider is not ready",
                                fullVersion);
+          context.is_start_session_failed_ = true;
         }
       }
     }
@@ -2063,6 +2065,7 @@ void ProtocolHandlerImpl::NotifySessionStarted(
         rejected_params,
         "Certain parameters in the StartService request were rejected",
         fullVersion);
+    context.is_start_session_failed_ = true;
   }
 }
 

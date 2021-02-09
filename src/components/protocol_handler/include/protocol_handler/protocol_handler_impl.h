@@ -462,7 +462,7 @@ class ProtocolHandlerImpl
    * Only valid when generated_session_id is 0. Note, even if
    * generated_session_id is 0, the list may be empty.
    */
-  void NotifySessionStarted(const SessionContext& context,
+  void NotifySessionStarted(SessionContext& context,
                             std::vector<std::string>& rejected_params,
                             const std::string err_reason) OVERRIDE;
 
