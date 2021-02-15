@@ -748,6 +748,13 @@ class ProtocolHandlerImpl
    */
   bool ParseFullVersion(utils::SemanticVersion& full_version,
                         const ProtocolFramePtr& packet) const;
+  /**
+   * @brief Writes available protocol vehicle data into structured bson
+   * @param params bson params to write into
+   * @param data data to write
+   */
+  void WriteProtocolVehicleData(
+      BsonObject& params, const connection_handler::ProtocolVehicleData& data);
 
   const ProtocolHandlerSettings& settings_;
 
