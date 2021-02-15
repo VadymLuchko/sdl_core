@@ -547,6 +547,10 @@ void ConnectionHandlerImpl::OnSessionStartedCallback(
         session_key,
         service_type,
         params);
+  } else {
+    if (protocol_handler_) {
+      protocol_handler_->NotifySessionStarted(context, rejected_params);
+    }
   }
 }
 
