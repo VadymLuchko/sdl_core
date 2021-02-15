@@ -383,7 +383,7 @@ class ProtocolHandlerImpl
                             uint8_t protocol_version,
                             uint8_t service_type,
                             const std::string& reason,
-                            const utils::SemanticVersion& full_version);
+                            utils::SemanticVersion& full_version);
 
   /**
    * \brief Sends fail of starting session to mobile application
@@ -402,7 +402,7 @@ class ProtocolHandlerImpl
                             uint8_t service_type,
                             std::vector<std::string>& rejectedParams,
                             const std::string& reason,
-                            const utils::SemanticVersion& full_version);
+                            utils::SemanticVersion& full_version);
 
   /**
    * \brief Sends acknowledgement of end session/service to mobile application
